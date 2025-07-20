@@ -100,6 +100,8 @@
             .grid-2, .grid-3 { grid-template-columns: 1fr; }
             .route-info { grid-template-columns: 1fr; }
             .modal-content { width: 95%; padding: 16px; }
+            .flex[style*="gap"] { flex-direction: column; align-items: stretch; }
+            .flex[style*="gap"] .btn { margin: 2px 0; }
         }
     </style>
 </head>
@@ -166,8 +168,22 @@
             <div class="card">
                 <div class="flex justify-between mb-20">
                     <h2>👥 Gestione Utenti</h2>
-                    <button class="btn btn-primary" onclick="openModal('user-modal')">➕ Aggiungi Utente</button>
+                    <div class="flex" style="gap: 8px; flex-wrap: wrap;">
+                        <button class="btn btn-secondary" onclick="downloadExcelTemplate()" title="Scarica un file Excel di esempio">📥 Template</button>
+                        <button class="btn btn-secondary" onclick="exportUsersToExcel()" title="Esporta utenti attuali in Excel">📤 Esporta Excel</button>
+                        <button class="btn btn-success" onclick="document.getElementById('excel-file').click()" title="Carica utenti da file Excel">📁 Carica Excel</button>
+                        <button class="btn btn-primary" onclick="openModal('user-modal')">➕ Aggiungi</button>
+                    </div>
                 </div>
+                <input type="file" id="excel-file" accept=".xlsx,.xls" style="display: none;" onchange="loadExcelFile(event)">
+                
+                <!-- Info box per Excel -->
+                <div style="background: #f0f9ff; border: 1px solid #0ea5e9; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 14px;">
+                    <strong>📋 Formato file Excel:</strong><br>
+                    <strong>Colonna A:</strong> Nome utente | <strong>Colonna B:</strong> Indirizzo completo | <strong>Colonna C:</strong> Telefono | <strong>Colonna D:</strong> Carrozzina (Sì/No)<br>
+                    <em>💡 Scarica il "Template Excel" per avere un esempio pronto!</em>
+                </div>
+                
                 <div id="users-table"></div>
             </div>
         </div>
@@ -359,6 +375,7 @@
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
         // App Data
         let appData = {
@@ -426,6 +443,143 @@
                     input.value = '';
                 }
             });
+        }
+
+        function loadExcelFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // Prendi il primo foglio
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    
+                    // Converti in JSON
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    if (jsonData.length < 2) {
+                        alert('❌ Il file Excel deve contenere almeno una riga di dati oltre all\'intestazione');
+                        return;
+                    }
+
+                    // Processa i dati (ignora la prima riga se è intestazione)
+                    const newUsers = [];
+                    let startRow = 0;
+                    
+                    // Controlla se la prima riga sembra essere un'intestazione
+                    const firstRow = jsonData[0];
+                    if (firstRow && typeof firstRow[0] === 'string' && 
+                        (firstRow[0].toLowerCase().includes('nome') || 
+                         firstRow[0].toLowerCase().includes('name'))) {
+                        startRow = 1; // Salta l'intestazione
+                    }
+
+                    for (let i = startRow; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        
+                        // Salta righe vuote
+                        if (!row || !row[0] || row[0].toString().trim() === '') continue;
+                        
+                        const name = row[0] ? row[0].toString().trim() : '';
+                        const address = row[1] ? row[1].toString().trim() : '';
+                        const phone = row[2] ? row[2].toString().trim() : '';
+                        const wheelchair = row[3] ? 
+                            (row[3].toString().toLowerCase().includes('s') || 
+                             row[3].toString().toLowerCase().includes('1') ||
+                             row[3].toString().toLowerCase().includes('true')) : false;
+
+                        if (name && address) {
+                            const id = Math.max(...appData.users.map(u => u.id), 0) + newUsers.length + 1;
+                            newUsers.push({
+                                id: id,
+                                name: name,
+                                address: address,
+                                phone: phone,
+                                needsWheelchair: wheelchair
+                            });
+                        }
+                    }
+
+                    if (newUsers.length === 0) {
+                        alert('❌ Nessun utente valido trovato nel file. Controlla il formato.');
+                        return;
+                    }
+
+                    // Chiedi conferma
+                    const message = `Trovati ${newUsers.length} utenti nel file Excel.\n\n` +
+                                  `Primi 3 esempi:\n` +
+                                  newUsers.slice(0, 3).map(u => `• ${u.name} - ${u.address}`).join('\n') +
+                                  `\n\nVuoi sostituire tutti gli utenti esistenti con questi?`;
+                    
+                    if (confirm(message)) {
+                        appData.users = newUsers;
+                        renderSection('users');
+                        updateStats();
+                        alert(`✅ Caricati ${newUsers.length} utenti da Excel!`);
+                    }
+
+                } catch (error) {
+                    console.error('Errore lettura Excel:', error);
+                    alert('❌ Errore nel leggere il file Excel. Assicurati che sia un file .xlsx o .xls valido.');
+                }
+            };
+            
+            reader.readAsArrayBuffer(file);
+            // Reset dell'input per permettere di ricaricare lo stesso file
+            event.target.value = '';
+        }
+
+        function downloadExcelTemplate() {
+            // Crea un template Excel di esempio
+            const templateData = [
+                ['Nome', 'Indirizzo', 'Telefono', 'Carrozzina'],
+                ['Mario Rossi', 'Via Roma 15, Padova', '347-1234567', 'Sì'],
+                ['Anna Verdi', 'Via Venezia 22, Padova', '349-2345678', 'No'],
+                ['Luigi Bianchi', 'Corso Milano 8, Padova', '346-3456789', 'Sì']
+            ];
+
+            const ws = XLSX.utils.aoa_to_sheet(templateData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Utenti");
+            
+            // Scarica il file
+            XLSX.writeFile(wb, "template_utenti_centro_diurno.xlsx");
+        }
+
+        function exportUsersToExcel() {
+            if (appData.users.length === 0) {
+                alert('❌ Nessun utente da esportare');
+                return;
+            }
+
+            // Prepara i dati per l'export
+            const exportData = [
+                ['Nome', 'Indirizzo', 'Telefono', 'Carrozzina']
+            ];
+
+            appData.users.forEach(user => {
+                exportData.push([
+                    user.name,
+                    user.address,
+                    user.phone || '',
+                    user.needsWheelchair ? 'Sì' : 'No'
+                ]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Utenti Centro Diurno");
+            
+            // Scarica il file con data corrente
+            const today = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(wb, `utenti_centro_diurno_${today}.xlsx`);
+            
+            alert(`✅ Esportati ${appData.users.length} utenti in Excel!`);
         }
 
         // Add functions
