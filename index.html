@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro Diurno Padova - Gestione Trasporti</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f3f4f6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 10px; }
+        
+        /* Header */
+        .header { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .header h1 { color: #1f2937; font-size: 24px; margin-bottom: 5px; }
+        .header p { color: #6b7280; }
+        
+        /* Navigation */
+        .nav { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .nav-btn { background: #3b82f6; color: white; border: none; padding: 12px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        .nav-btn.active { background: #1d4ed8; }
+        .nav-btn:hover { background: #2563eb; }
+        
+        /* Cards and Layout */
+        .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat { padding: 20px; border-radius: 8px; text-align: center; }
+        .stat-blue { background: #dbeafe; color: #1e40af; }
+        .stat-green { background: #dcfce7; color: #166534; }
+        .stat-yellow { background: #fef3c7; color: #92400e; }
+        .stat-red { background: #fecaca; color: #991b1b; }
+        .stat h3 { font-size: 14px; margin-bottom: 8px; }
+        .stat .number { font-size: 28px; font-weight: bold; }
+        
+        /* Buttons */
+        .btn { padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin: 4px; }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-secondary { background: #6b7280; color: white; }
+        .btn:hover { opacity: 0.9; }
+        
+        /* Grid */
+        .grid { display: grid; gap: 15px; }
+        .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+        .grid-3 { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+        
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+        th { background: #f9fafb; font-weight: 600; font-size: 12px; color: #374151; }
+        
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal.show { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 24px; border-radius: 8px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+        
+        /* Forms */
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; margin-bottom: 4px; font-weight: 500; color: #374151; }
+        .form-input { width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+        .form-checkbox { display: flex; align-items: center; gap: 8px; }
+        
+        /* Badges */
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+        .badge-success { background: #dcfce7; color: #166534; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fecaca; color: #991b1b; }
+        
+        /* Utilities */
+        .hidden { display: none; }
+        .flex { display: flex; align-items: center; gap: 10px; }
+        .justify-between { justify-content: space-between; }
+        .text-center { text-align: center; }
+        .mb-20 { margin-bottom: 20px; }
+        
+        /* Message Cards */
+        .message-card { background: #fef2f2; border: 1px solid #fecaca; padding: 16px; border-radius: 8px; margin-bottom: 12px; }
+        .message-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px; }
+        .message-content { background: white; padding: 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #e5e7eb; }
+        .substitutes { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+        .substitute { background: #dcfce7; padding: 8px; border-radius: 4px; font-size: 12px; }
+        
+        /* Routes */
+        .route-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+        .route-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .route-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 12px; }
+        .user-list { background: #f9fafb; padding: 12px; border-radius: 6px; }
+        .user-item { background: white; padding: 8px; margin: 4px 0; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Schedule Table */
+        .schedule-container { max-height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 6px; }
+        .schedule-table th { position: sticky; top: 0; background: #f9fafb; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 8px; }
+            .nav { flex-direction: column; }
+            .nav-btn { text-align: center; }
+            .stats { grid-template-columns: 1fr; }
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            .route-info { grid-template-columns: 1fr; }
+            .modal-content { width: 95%; padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🏢 Centro Diurno Padova</h1>
+            <p>Via Due Palazzi 16, Padova - Sistema Gestione Trasporti</p>
+        </div>
+
+        <!-- Navigation -->
+        <div class="nav">
+            <button class="nav-btn active" onclick="showSection('dashboard')">📊 Dashboard</button>
+            <button class="nav-btn" onclick="showSection('users')">👥 Utenti</button>
+            <button class="nav-btn" onclick="showSection('operators')">🚗 Operatori</button>
+            <button class="nav-btn" onclick="showSection('vehicles')">🚐 Veicoli</button>
+            <button class="nav-btn" onclick="showSection('routes')">🗺️ Percorsi</button>
+            <button class="nav-btn" onclick="showSection('schedule')">📅 Pianificazione</button>
+            <button class="nav-btn" onclick="showSection('messages')">📱 Messaggi</button>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard" class="section">
+            <div class="stats">
+                <div class="stat stat-blue">
+                    <h3>Utenti Totali</h3>
+                    <div class="number" id="stat-users">3</div>
+                </div>
+                <div class="stat stat-green">
+                    <h3>Veicoli Disponibili</h3>
+                    <div class="number" id="stat-vehicles">3</div>
+                </div>
+                <div class="stat stat-yellow">
+                    <h3>Giorni Pianificati</h3>
+                    <div class="number" id="stat-schedule">0</div>
+                </div>
+                <div class="stat stat-red">
+                    <h3>Messaggi Assenza</h3>
+                    <div class="number" id="stat-messages">0</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3 style="margin-bottom: 16px;">🏢 Informazioni Centro</h3>
+                <div class="grid grid-2">
+                    <div>
+                        <h4 style="margin-bottom: 12px; color: #374151;">Orari di Servizio</h4>
+                        <p style="margin-bottom: 8px;">🌅 Partenza Mattina: 08:30</p>
+                        <p style="margin-bottom: 8px;">🌇 Partenza Pomeriggio: 15:30</p>
+                        <p>📅 Giorni: Lunedì - Venerdì</p>
+                    </div>
+                    <div>
+                        <h4 style="margin-bottom: 12px; color: #374151;">Azioni Rapide</h4>
+                        <button class="btn btn-primary" onclick="optimizeRoutes()">🗺️ Ottimizza Percorsi</button><br>
+                        <button class="btn btn-success" onclick="generateSchedule()">📅 Genera Pianificazione</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Section -->
+        <div id="users" class="section hidden">
+            <div class="card">
+                <div class="flex justify-between mb-20">
+                    <h2>👥 Gestione Utenti</h2>
+                    <button class="btn btn-primary" onclick="openModal('user-modal')">➕ Aggiungi Utente</button>
+                </div>
+                <div id="users-table"></div>
+            </div>
+        </div>
+
+        <!-- Operators Section -->
+        <div id="operators" class="section hidden">
+            <div class="card">
+                <div class="flex justify-between mb-20">
+                    <h2>🚗 Gestione Operatori</h2>
+                    <button class="btn btn-primary" onclick="openModal('operator-modal')">➕ Aggiungi Operatore</button>
+                </div>
+                <div id="operators-grid" class="grid grid-3"></div>
+            </div>
+        </div>
+
+        <!-- Vehicles Section -->
+        <div id="vehicles" class="section hidden">
+            <div class="card">
+                <div class="flex justify-between mb-20">
+                    <h2>🚐 Gestione Veicoli</h2>
+                    <button class="btn btn-primary" onclick="openModal('vehicle-modal')">➕ Aggiungi Veicolo</button>
+                </div>
+                <div id="vehicles-grid" class="grid grid-2"></div>
+            </div>
+        </div>
+
+        <!-- Routes Section -->
+        <div id="routes" class="section hidden">
+            <div class="card">
+                <div class="flex justify-between mb-20">
+                    <h2>🗺️ Percorsi Ottimizzati con Google Maps</h2>
+                    <button class="btn btn-success" onclick="optimizeRoutes()">🔄 Ricalcola Percorsi</button>
+                </div>
+                <div id="routes-content"></div>
+            </div>
+        </div>
+
+        <!-- Schedule Section -->
+        <div id="schedule" class="section hidden">
+            <div class="card">
+                <div class="flex justify-between mb-20">
+                    <h2>📅 Pianificazione Trimestrale Operatori</h2>
+                    <button class="btn btn-success" onclick="generateSchedule()">📅 Genera Nuovo Trimestre</button>
+                </div>
+                <div id="schedule-content"></div>
+            </div>
+        </div>
+
+        <!-- Messages Section -->
+        <div id="messages" class="section hidden">
+            <div class="card">
+                <div class="flex justify-between mb-20">
+                    <h2>📱 Messaggi di Assenza</h2>
+                    <div style="color: #6b7280; font-size: 14px;">
+                        <span id="messages-count">0</span> messaggi ricevuti
+                    </div>
+                </div>
+                <div id="messages-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- User Modal -->
+    <div id="user-modal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 20px;">Aggiungi Nuovo Utente</h3>
+            <div class="form-group">
+                <label class="form-label">Nome Completo</label>
+                <input id="user-name" class="form-input" type="text" placeholder="Nome e cognome">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Indirizzo Completo</label>
+                <input id="user-address" class="form-input" type="text" placeholder="Via, numero civico, città">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Numero di Telefono</label>
+                <input id="user-phone" class="form-input" type="text" placeholder="333-1234567">
+            </div>
+            <div class="form-group">
+                <label class="form-checkbox">
+                    <input id="user-wheelchair" type="checkbox">
+                    <span>Necessita di carrozzina</span>
+                </label>
+            </div>
+            <div class="flex" style="gap: 12px;">
+                <button class="btn btn-primary" onclick="addUser()" style="flex: 1;">Aggiungi</button>
+                <button class="btn btn-secondary" onclick="closeModal('user-modal')" style="flex: 1;">Annulla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Operator Modal -->
+    <div id="operator-modal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 20px;">Aggiungi Nuovo Operatore</h3>
+            <div class="form-group">
+                <label class="form-label">Nome Completo</label>
+                <input id="operator-name" class="form-input" type="text" placeholder="Nome e cognome">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Numero di Telefono</label>
+                <input id="operator-phone" class="form-input" type="text" placeholder="333-1234567">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Turno di Lavoro</label>
+                <select id="operator-shift" class="form-input">
+                    <option value="mattina">Mattina (08:30)</option>
+                    <option value="pomeriggio">Pomeriggio (15:30)</option>
+                    <option value="entrambi">Entrambi i turni</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-checkbox">
+                    <input id="operator-longbase" type="checkbox">
+                    <span>Abilitato alla guida del passo lungo</span>
+                </label>
+            </div>
+            <div class="flex" style="gap: 12px;">
+                <button class="btn btn-primary" onclick="addOperator()" style="flex: 1;">Aggiungi</button>
+                <button class="btn btn-secondary" onclick="closeModal('operator-modal')" style="flex: 1;">Annulla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vehicle Modal -->
+    <div id="vehicle-modal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 20px;">Aggiungi Nuovo Veicolo</h3>
+            <div class="form-group">
+                <label class="form-label">Nome Veicolo</label>
+                <input id="vehicle-name" class="form-input" type="text" placeholder="es: Pulmino D">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Targa</label>
+                <input id="vehicle-plate" class="form-input" type="text" placeholder="es: AB123CD">
+            </div>
+            <div class="form-group">
+                <label class="form-checkbox">
+                    <input id="vehicle-lift" type="checkbox">
+                    <span>Ha pedana elevatrice</span>
+                </label>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Numero posti carrozzina</label>
+                <input id="vehicle-wheelchair" class="form-input" type="number" min="0" max="8" value="0" placeholder="0">
+                <small style="color: #6b7280; font-size: 12px;">Inserisci 0 se non può trasportare carrozzine</small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Posti totali disponibili (escluso autista)</label>
+                <input id="vehicle-seats" class="form-input" type="number" min="4" max="12" value="6" placeholder="6">
+                <small style="color: #6b7280; font-size: 12px;">Numero totale di posti per utenti</small>
+            </div>
+            <div class="form-group">
+                <label class="form-checkbox">
+                    <input id="vehicle-longbase" type="checkbox">
+                    <span>Passo lungo (richiede abilitazione speciale)</span>
+                </label>
+            </div>
+            <div class="flex" style="gap: 12px;">
+                <button class="btn btn-primary" onclick="addVehicle()" style="flex: 1;">Aggiungi</button>
+                <button class="btn btn-secondary" onclick="closeModal('vehicle-modal')" style="flex: 1;">Annulla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Modal -->
+    <div id="message-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="message-title" style="margin-bottom: 20px;">📱 Invia Messaggio Assenza</h3>
+            <div id="message-operator-info" style="background: #f3f4f6; padding: 12px; border-radius: 6px; margin-bottom: 16px;"></div>
+            <div class="form-group">
+                <label class="form-label">Messaggio di assenza</label>
+                <textarea id="message-text" class="form-input" rows="4" placeholder="Es: Non posso venire oggi per motivi di salute. Grazie per la comprensione."></textarea>
+                <small style="color: #6b7280; font-size: 12px;">Il messaggio verrà inviato automaticamente a tutti gli altri operatori</small>
+            </div>
+            <div style="background: #fef3c7; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 13px;">
+                <strong>⚠️ Cosa succede quando invii:</strong>
+                <ul style="margin: 8px 0 0 20px; padding-left: 0;">
+                    <li>Tutti gli altri operatori riceveranno la notifica</li>
+                    <li>Verranno identificati automaticamente i sostituti disponibili</li>
+                    <li>Il messaggio sarà registrato nel sistema</li>
+                </ul>
+            </div>
+            <div class="flex" style="gap: 12px;">
+                <button class="btn btn-danger" onclick="sendMessage()" style="flex: 1;">📱 Invia Messaggio</button>
+                <button class="btn btn-secondary" onclick="closeModal('message-modal')" style="flex: 1;">Annulla</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // App Data
+        let appData = {
+            users: [
+                {id: 1, name: 'Mario Rossi', address: 'Via Roma 15, Padova', phone: '347-1234567', needsWheelchair: true},
+                {id: 2, name: 'Anna Verdi', address: 'Via Venezia 22, Padova', phone: '349-2345678', needsWheelchair: false},
+                {id: 3, name: 'Luigi Bianchi', address: 'Corso Milano 8, Padova', phone: '346-3456789', needsWheelchair: true}
+            ],
+            operators: [
+                {id: 1, name: 'Marco Operatore', phone: '333-1111111', shift: 'mattina', canDriveLong: true},
+                {id: 2, name: 'Laura Autista', phone: '333-2222222', shift: 'mattina', canDriveLong: false},
+                {id: 3, name: 'Paolo Guida', phone: '333-3333333', shift: 'pomeriggio', canDriveLong: true}
+            ],
+            vehicles: [
+                {id: 1, name: 'Pulmino A', plate: 'AB123CD', hasLift: true, wheelchairSpots: 2, totalSeats: 6, isLongBase: false},
+                {id: 2, name: 'Pulmino B', plate: 'EF456GH', hasLift: false, wheelchairSpots: 0, totalSeats: 6, isLongBase: false},
+                {id: 3, name: 'Pulmino C', plate: 'IL789MN', hasLift: true, wheelchairSpots: 3, totalSeats: 8, isLongBase: true}
+            ],
+            routes: [],
+            schedule: [],
+            messages: [],
+            selectedOperator: null
+        };
+
+        // Navigation
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            
+            // Remove active class from all nav buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionName).classList.remove('hidden');
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+            
+            // Render content
+            renderSection(sectionName);
+        }
+
+        // Modal functions
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('show');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+            clearForm(modalId);
+        }
+
+        function clearForm(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.querySelectorAll('input, textarea, select').forEach(input => {
+                if (input.type === 'checkbox') {
+                    input.checked = false;
+                } else if (input.type === 'number') {
+                    input.value = input.id.includes('seats') ? '6' : '0';
+                } else {
+                    input.value = '';
+                }
+            });
+        }
+
+        // Add functions
+        function addUser() {
+            const name = document.getElementById('user-name').value.trim();
+            const address = document.getElementById('user-address').value.trim();
+            const phone = document.getElementById('user-phone').value.trim();
+            const needsWheelchair = document.getElementById('user-wheelchair').checked;
+            
+            if (name && address) {
+                const id = Math.max(...appData.users.map(u => u.id), 0) + 1;
+                appData.users.push({id, name, address, phone, needsWheelchair});
+                closeModal('user-modal');
+                renderSection('users');
+                updateStats();
+                alert('✅ Utente aggiunto con successo!');
+            } else {
+                alert('❌ Compila almeno Nome e Indirizzo');
+            }
+        }
+
+        function addOperator() {
+            const name = document.getElementById('operator-name').value.trim();
+            const phone = document.getElementById('operator-phone').value.trim();
+            const shift = document.getElementById('operator-shift').value;
+            const canDriveLong = document.getElementById('operator-longbase').checked;
+            
+            if (name) {
+                const id = Math.max(...appData.operators.map(o => o.id), 0) + 1;
+                appData.operators.push({id, name, phone, shift, canDriveLong});
+                closeModal('operator-modal');
+                renderSection('operators');
+                updateStats();
+                alert('✅ Operatore aggiunto con successo!');
+            } else {
+                alert('❌ Inserisci almeno il nome');
+            }
+        }
+
+        function addVehicle() {
+            const name = document.getElementById('vehicle-name').value.trim();
+            const plate = document.getElementById('vehicle-plate').value.trim();
+            const hasLift = document.getElementById('vehicle-lift').checked;
+            const wheelchairSpots = parseInt(document.getElementById('vehicle-wheelchair').value) || 0;
+            const totalSeats = parseInt(document.getElementById('vehicle-seats').value) || 6;
+            const isLongBase = document.getElementById('vehicle-longbase').checked;
+            
+            if (name && plate) {
+                const id = Math.max(...appData.vehicles.map(v => v.id), 0) + 1;
+                appData.vehicles.push({id, name, plate, hasLift, wheelchairSpots, totalSeats, isLongBase});
+                closeModal('vehicle-modal');
+                renderSection('vehicles');
+                updateStats();
+                alert('✅ Veicolo aggiunto con successo!');
+            } else {
+                alert('❌ Compila almeno Nome e Targa');
+            }
+        }
+
+        function deleteItem(type, id) {
+            if (confirm('Sei sicuro di voler eliminare questo elemento?')) {
+                appData[type] = appData[type].filter(item => item.id !== id);
+                const sectionMap = {users: 'users', operators: 'operators', vehicles: 'vehicles'};
+                renderSection(sectionMap[type]);
+                updateStats();
+                alert('✅ Elemento eliminato');
+            }
+        }
+
+        function optimizeRoutes() {
+            const wheelchairUsers = appData.users.filter(u => u.needsWheelchair);
+            const regularUsers = appData.users.filter(u => !u.needsWheelchair);
+            const liftVehicles = appData.vehicles.filter(v => v.hasLift);
+            const routes = [];
+            
+            let wheelchairIndex = 0;
+            
+            // Assign wheelchair users to lift vehicles
+            liftVehicles.forEach((vehicle, idx) => {
+                if (wheelchairIndex < wheelchairUsers.length) {
+                    const routeUsers = [];
+                    const maxUsers = Math.min(vehicle.wheelchairSpots, wheelchairUsers.length - wheelchairIndex);
+                    
+                    for (let i = 0; i < maxUsers; i++) {
+                        if (wheelchairIndex < wheelchairUsers.length) {
+                            routeUsers.push(wheelchairUsers[wheelchairIndex]);
+                            wheelchairIndex++;
+                        }
+                    }
+
+                    if (routeUsers.length > 0) {
+                        const operator = appData.operators[idx % appData.operators.length];
+                        const addresses = ['Via Due Palazzi 16, Padova', ...routeUsers.map(u => u.address)];
+                        const mapsUrl = `https://www.google.com/maps/dir/${addresses.map(addr => encodeURIComponent(addr)).join('/')}`;
+                        
+                        routes.push({
+                            id: routes.length + 1,
+                            vehicle: vehicle,
+                            operator: operator,
+                            users: routeUsers,
+                            estimatedTime: routeUsers.length * 8 + 15,
+                            distance: (routeUsers.length * 3.5 + Math.random() * 5).toFixed(1),
+                            mapsUrl: mapsUrl
+                        });
+                    }
+                }
+            });
+
+            // Assign regular users to remaining vehicles
+            const remainingVehicles = appData.vehicles.filter(v => 
+                !routes.some(route => route.vehicle.id === v.id)
+            );
+            
+            let regularIndex = 0;
+            remainingVehicles.forEach((vehicle, idx) => {
+                if (regularIndex < regularUsers.length) {
+                    const routeUsers = [];
+                    const maxUsers = Math.min(vehicle.totalSeats, regularUsers.length - regularIndex);
+                    
+                    for (let i = 0; i < maxUsers; i++) {
+                        if (regularIndex < regularUsers.length) {
+                            routeUsers.push(regularUsers[regularIndex]);
+                            regularIndex++;
+                        }
+                    }
+
+                    if (routeUsers.length > 0) {
+                        const availableOperators = appData.operators.filter(op => 
+                            !routes.some(route => route.operator.id === op.id) &&
+                            (vehicle.isLongBase ? op.canDriveLong : true)
+                        );
+                        
+                        const operator = availableOperators[0] || appData.operators[0];
+                        const addresses = ['Via Due Palazzi 16, Padova', ...routeUsers.map(u => u.address)];
+                        const mapsUrl = `https://www.google.com/maps/dir/${addresses.map(addr => encodeURIComponent(addr)).join('/')}`;
+                        
+                        routes.push({
+                            id: routes.length + 1,
+                            vehicle: vehicle,
+                            operator: operator,
+                            users: routeUsers,
+                            estimatedTime: routeUsers.length * 6 + 10,
+                            distance: (routeUsers.length * 3.2 + Math.random() * 4).toFixed(1),
+                            mapsUrl: mapsUrl
+                        });
+                    }
+                }
+            });
+
+            appData.routes = routes;
+            renderSection('routes');
+            updateStats();
+            alert(`✅ ${routes.length} percorsi ottimizzati con successo!`);
+        }
+
+        function generateSchedule() {
+            const schedule = [];
+            const today = new Date();
+            const startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            const endDate = new Date(today.getFullYear(), today.getMonth() + 3, 0);
+            
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                const dayOfWeek = d.getDay();
+                
+                // Only work days (Monday-Friday)
+                if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                    const availableOperators = [...appData.operators];
+                    // Shuffle for variation
+                    availableOperators.sort(() => Math.random() - 0.5);
+                    
+                    schedule.push({
+                        date: new Date(d),
+                        dateString: d.toLocaleDateString('it-IT'),
+                        dayName: d.toLocaleDateString('it-IT', { weekday: 'long' }),
+                        morning: {
+                            primary: availableOperators[0] || null,
+                            backup1: availableOperators[1] || null,
+                            backup2: availableOperators[2] || null
+                        },
+                        afternoon: {
+                            primary: availableOperators[0] || null,
+                            backup1: availableOperators[1] || null,
+                            backup2: availableOperators[2] || null
+                        }
+                    });
+                }
+            }
+            
+            appData.schedule = schedule;
+            renderSection('schedule');
+            updateStats();
+            alert(`✅ Pianificazione trimestrale generata: ${schedule.length} giorni lavorativi!`);
+        }
+
+        function showMessageModal(operatorId) {
+            const operator = appData.operators.find(op => op.id === operatorId);
+            if (operator) {
+                appData.selectedOperator = operator;
+                document.getElementById('message-title').textContent = `📱 Invia Messaggio Assenza - ${operator.name}`;
+                document.getElementById('message-operator-info').innerHTML = `
+                    <p><strong>Operatore:</strong> ${operator.name}</p>
+                    <p><strong>Telefono:</strong> ${operator.phone}</p>
+                    <p><strong>Turno abituale:</strong> ${operator.shift}</p>
+                `;
+                openModal('message-modal');
+            }
+        }
+
+        function sendMessage() {
+            const messageText = document.getElementById('message-text').value.trim();
+            if (!messageText || !appData.selectedOperator) {
+                alert('❌ Inserisci un messaggio');
+                return;
+            }
+            
+            const substitutes = appData.operators.filter(op => op.id !== appData.selectedOperator.id);
+            
+            const newMessage = {
+                id: Date.now(),
+                from: appData.selectedOperator.name,
+                fromPhone: appData.selectedOperator.phone,
+                message: messageText,
+                timestamp: new Date().toLocaleString('it-IT'),
+                date: new Date().toLocaleDateString('it-IT'),
+                substitutes: substitutes.map(s => ({
+                    name: s.name,
+                    phone: s.phone,
+                    shift: s.shift,
+                    canDriveLong: s.canDriveLong
+                }))
+            };
+            
+            appData.messages.unshift(newMessage);
+            closeModal('message-modal');
+            renderSection('messages');
+            updateStats();
+            alert('✅ Messaggio inviato a tutti i sostituti disponibili!');
+        }
+
+        function renderSection(sectionName) {
+            switch(sectionName) {
+                case 'users':
+                    renderUsers();
+                    break;
+                case 'operators':
+                    renderOperators();
+                    break;
+                case 'vehicles':
+                    renderVehicles();
+                    break;
+                case 'routes':
+                    renderRoutes();
+                    break;
+                case 'schedule':
+                    renderSchedule();
+                    break;
+                case 'messages':
+                    renderMessages();
+                    break;
+            }
+        }
+
+        function renderUsers() {
+            const container = document.getElementById('users-table');
+            container.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Indirizzo</th>
+                            <th>Telefono</th>
+                            <th>Necessità</th>
+                            <th>Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${appData.users.map(user => `
+                            <tr>
+                                <td><strong>${user.name}</strong></td>
+                                <td>${user.address}</td>
+                                <td>${user.phone || 'N/A'}</td>
+                                <td>
+                                    <span class="badge ${user.needsWheelchair ? 'badge-warning' : 'badge-success'}">
+                                        ${user.needsWheelchair ? '♿ Carrozzina' : '👤 Standard'}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-danger" onclick="deleteItem('users', ${user.id})" style="padding: 6px 12px; font-size: 12px;">
+                                        🗑️ Elimina
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function renderOperators() {
+            const container = document.getElementById('operators-grid');
+            container.innerHTML = appData.operators.map(operator => `
+                <div class="card">
+                    <div class="flex justify-between" style="margin-bottom: 12px;">
+                        <div>
+                            <h3 style="margin: 0; color: #1f2937;">${operator.name}</h3>
+                            <p style="margin: 4px 0; color: #6b7280; font-size: 14px;">📞 ${operator.phone || 'N/A'}</p>
+                        </div>
+                        <button class="btn btn-danger" onclick="deleteItem('operators', ${operator.id})" style="padding: 6px 12px; font-size: 12px;">
+                            🗑️
+                        </button>
+                    </div>
+                    
+                    <div style="margin-bottom: 16px;">
+                        <p style="margin: 4px 0; font-size: 14px;"><strong>Turno:</strong> ${operator.shift}</p>
+                        <p style="margin: 4px 0; font-size: 14px;">
+                            <strong>Passo lungo:</strong> 
+                            <span style="color: ${operator.canDriveLong ? '#166534' : '#991b1b'};">
+                                ${operator.canDriveLong ? '✅ Abilitato' : '❌ Non abilitato'}
+                            </span>
+                        </p>
+                        <p style="margin: 4px 0; font-size: 14px;">
+                            <strong>Stato:</strong> 
+                            <span style="color: #166534;">✅ Disponibile</span>
+                        </p>
+                    </div>
+                    
+                    <button class="btn btn-danger" onclick="showMessageModal(${operator.id})" style="width: 100%; font-size: 12px;">
+                        📱 Invia Messaggio Assenza
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function renderVehicles() {
+            const container = document.getElementById('vehicles-grid');
+            container.innerHTML = appData.vehicles.map(vehicle => `
+                <div class="card">
+                    <div class="flex justify-between" style="margin-bottom: 12px;">
+                        <div>
+                            <h3 style="margin: 0; color: #1f2937;">${vehicle.name}</h3>
+                            <p style="margin: 4px 0; color: #6b7280; font-size: 14px;">🔢 Targa: ${vehicle.plate}</p>
+                        </div>
+                        <div class="flex" style="gap: 8px; align-items: flex-start;">
+                            <span class="badge badge-success" style="font-size: 10px;">Disponibile</span>
+                            <button class="btn btn-danger" onclick="deleteItem('vehicles', ${vehicle.id})" style="padding: 6px 12px; font-size: 12px;">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div style="font-size: 14px; line-height: 1.5;">
+                        <p style="margin: 4px 0;">🚐 ${vehicle.isLongBase ? 'Passo Lungo' : 'Passo Standard'}</p>
+                        <p style="margin: 4px 0;">♿ Pedana: ${vehicle.hasLift ? 'SÌ' : 'NO'}</p>
+                        <p style="margin: 4px 0;">🪑 Posti carrozzina: ${vehicle.wheelchairSpots}</p>
+                        <p style="margin: 4px 0;">👥 Posti totali: ${vehicle.totalSeats} (escluso autista)</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderRoutes() {
+            const container = document.getElementById('routes-content');
+            
+            if (appData.routes.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center" style="padding: 40px; color: #6b7280;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">🗺️</div>
+                        <p style="font-size: 18px; margin-bottom: 8px;">Nessun percorso generato</p>
+                        <p style="font-size: 14px;">Clicca "Ricalcola Percorsi" per generare i percorsi ottimali con Google Maps</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = appData.routes.map(route => `
+                <div class="route-card">
+                    <div class="route-header">
+                        <h3 style="margin: 0; color: #1f2937;">Percorso ${route.id}</h3>
+                        <div class="flex" style="gap: 8px;">
+                            <span class="badge badge-success">Partenza: 08:30</span>
+                            <a href="${route.mapsUrl}" target="_blank" class="btn btn-success" style="padding: 6px 12px; font-size: 12px; text-decoration: none;">
+                                🧭 Apri Google Maps
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="route-info">
+                        <div>
+                            <p style="margin: 0; font-size: 12px; color: #6b7280;">VEICOLO</p>
+                            <p style="margin: 2px 0; font-weight: 600;">${route.vehicle.name}</p>
+                            <p style="margin: 0; font-size: 12px; color: #6b7280;">Targa: ${route.vehicle.plate}</p>
+                        </div>
+                        <div>
+                            <p style="margin: 0; font-size: 12px; color: #6b7280;">OPERATORE</p>
+                            <p style="margin: 2px 0; font-weight: 600;">${route.operator.name}</p>
+                            <p style="margin: 0; font-size: 12px; color: #6b7280;">${route.operator.phone}</p>
+                        </div>
+                        <div>
+                            <p style="margin: 0; font-size: 12px; color: #6b7280;">TEMPO/DISTANZA</p>
+                            <p style="margin: 2px 0; font-weight: 600;">${route.estimatedTime} minuti</p>
+                            <p style="margin: 0; font-size: 12px; color: #6b7280;">${route.distance} km</p>
+                        </div>
+                        <div>
+                            <p style="margin: 0; font-size: 12px; color: #6b7280;">UTENTI</p>
+                            <p style="margin: 2px 0; font-weight: 600;">${route.users.length} persone</p>
+                            <p style="margin: 0; font-size: 12px; color: #6b7280;">
+                                ${route.users.filter(u => u.needsWheelchair).length} carrozzine
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="user-list">
+                        <p style="margin: 0 0 8px 0; font-weight: 600; color: #374151;">Elenco utenti da accompagnare:</p>
+                        ${route.users.map((user, idx) => `
+                            <div class="user-item">
+                                <div class="flex" style="gap: 8px;">
+                                    <span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">
+                                        ${idx + 1}
+                                    </span>
+                                    <div>
+                                        <div style="font-weight: 600;">${user.name}</div>
+                                        <div style="font-size: 12px; color: #6b7280;">${user.address}</div>
+                                    </div>
+                                </div>
+                                <div class="flex" style="gap: 8px; align-items: center;">
+                                    <span style="font-size: 12px; color: #6b7280;">${user.phone || 'N/A'}</span>
+                                    ${user.needsWheelchair ? '<span class="badge badge-warning">♿ Carrozzina</span>' : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderSchedule() {
+            const container = document.getElementById('schedule-content');
+            
+            if (appData.schedule.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center" style="padding: 40px; color: #6b7280;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">📅</div>
+                        <p style="font-size: 18px; margin-bottom: 8px;">Nessuna pianificazione generata</p>
+                        <p style="font-size: 14px;">Clicca "Genera Nuovo Trimestre" per creare la pianificazione automatica</p>
+                        <p style="font-size: 12px; color: #9ca3af; margin-top: 12px;">
+                            Verrà creata una pianificazione per i prossimi 3 mesi con 2 sostituti per ogni turno
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="card" style="margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 16px 0;">📊 Riepilogo Pianificazione</h3>
+                    <div class="stats">
+                        <div class="stat stat-blue">
+                            <h3>Giorni Pianificati</h3>
+                            <div class="number">${appData.schedule.length}</div>
+                        </div>
+                        <div class="stat stat-green">
+                            <h3>Turno Mattina</h3>
+                            <div class="number">08:30</div>
+                        </div>
+                        <div class="stat stat-yellow">
+                            <h3>Turno Pomeriggio</h3>
+                            <div class="number">15:30</div>
+                        </div>
+                        <div class="stat stat-red">
+                            <h3>Sostituti per Turno</h3>
+                            <div class="number">2</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="schedule-container">
+                    <table class="schedule-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 140px;">Data</th>
+                                <th style="width: 150px;">Mattina (08:30)</th>
+                                <th style="width: 200px;">Sostituti Mattina</th>
+                                <th style="width: 150px;">Pomeriggio (15:30)</th>
+                                <th style="width: 200px;">Sostituti Pomeriggio</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${appData.schedule.slice(0, 30).map((day, index) => `
+                                <tr style="background: ${index % 2 === 0 ? 'white' : '#f9fafb'};">
+                                    <td>
+                                        <div style="font-weight: 600; text-transform: capitalize;">${day.dayName}</div>
+                                        <div style="font-size: 12px; color: #6b7280;">${day.dateString}</div>
+                                    </td>
+                                    <td>
+                                        <div style="font-weight: 600; color: #1e40af;">
+                                            ${day.morning.primary ? day.morning.primary.name : 'N/A'}
+                                        </div>
+                                        ${day.morning.primary ? `<div style="font-size: 12px; color: #6b7280;">${day.morning.primary.phone}</div>` : ''}
+                                    </td>
+                                    <td style="font-size: 12px;">
+                                        ${day.morning.backup1 ? `
+                                            <div style="margin-bottom: 4px;">
+                                                <strong>1°:</strong> ${day.morning.backup1.name}<br>
+                                                <span style="color: #6b7280;">${day.morning.backup1.phone}</span>
+                                            </div>
+                                        ` : ''}
+                                        ${day.morning.backup2 ? `
+                                            <div>
+                                                <strong>2°:</strong> ${day.morning.backup2.name}<br>
+                                                <span style="color: #6b7280;">${day.morning.backup2.phone}</span>
+                                            </div>
+                                        ` : ''}
+                                    </td>
+                                    <td>
+                                        <div style="font-weight: 600; color: #dc2626;">
+                                            ${day.afternoon.primary ? day.afternoon.primary.name : 'N/A'}
+                                        </div>
+                                        ${day.afternoon.primary ? `<div style="font-size: 12px; color: #6b7280;">${day.afternoon.primary.phone}</div>` : ''}
+                                    </td>
+                                    <td style="font-size: 12px;">
+                                        ${day.afternoon.backup1 ? `
+                                            <div style="margin-bottom: 4px;">
+                                                <strong>1°:</strong> ${day.afternoon.backup1.name}<br>
+                                                <span style="color: #6b7280;">${day.afternoon.backup1.phone}</span>
+                                            </div>
+                                        ` : ''}
+                                        ${day.afternoon.backup2 ? `
+                                            <div>
+                                                <strong>2°:</strong> ${day.afternoon.backup2.name}<br>
+                                                <span style="color: #6b7280;">${day.afternoon.backup2.phone}</span>
+                                            </div>
+                                        ` : ''}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <p style="margin-top: 16px; font-size: 12px; color: #6b7280; text-align: center;">
+                    Mostrando primi 30 giorni di ${appData.schedule.length} giorni totali pianificati
+                </p>
+            `;
+        }
+
+        function renderMessages() {
+            const container = document.getElementById('messages-content');
+            document.getElementById('messages-count').textContent = appData.messages.length;
+            
+            if (appData.messages.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center" style="padding: 40px; color: #6b7280;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">📱</div>
+                        <p style="font-size: 18px; margin-bottom: 8px;">Nessun messaggio di assenza</p>
+                        <p style="font-size: 14px;">I messaggi degli operatori appariranno qui automaticamente</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = appData.messages.map(message => `
+                <div class="message-card">
+                    <div class="message-header">
+                        <div>
+                            <h3 style="margin: 0; color: #dc2626;">🚨 Assenza di ${message.from}</h3>
+                            <p style="margin: 4px 0 0 0; color: #6b7280; font-size: 14px;">
+                                📞 ${message.fromPhone} • 📅 ${message.date}
+                            </p>
+                        </div>
+                        <span style="font-size: 12px; color: #6b7280;">${message.timestamp}</span>
+                    </div>
+                    
+                    <div class="message-content">
+                        <strong>Messaggio:</strong><br>
+                        "${message.message}"
+                    </div>
+                    
+                    <div>
+                        <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #374151;">
+                            🔄 Sostituti automaticamente notificati:
+                        </h4>
+                        <div class="substitutes">
+                            ${message.substitutes.map(substitute => `
+                                <div class="substitute">
+                                    <div style="font-weight: bold; color: #166534;">
+                                        ${substitute.name}
+                                    </div>
+                                    <div style="color: #166534; margin: 2px 0;">
+                                        📞 ${substitute.phone}
+                                    </div>
+                                    <div style="color: #065f46; font-size: 11px;">
+                                        Turno: ${substitute.shift} • 
+                                        ${substitute.canDriveLong ? 'Passo lungo: ✅' : 'Passo lungo: ❌'}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #fecaca;">
+                        <span class="badge badge-success">
+                            ✅ Notifica inviata a tutti i sostituti
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateStats() {
+            document.getElementById('stat-users').textContent = appData.users.length;
+            document.getElementById('stat-vehicles').textContent = appData.vehicles.length;
+            document.getElementById('stat-schedule').textContent = appData.schedule.length;
+            document.getElementById('stat-messages').textContent = appData.messages.length;
+        }
+
+        // Initialize app
+        updateStats();
+        
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>
