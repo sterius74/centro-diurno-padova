@@ -147,7 +147,7 @@
             
             <div class="card">
                 <h3 style="margin-bottom: 16px;">🏢 Informazioni Centro</h3>
-                <div class="grid grid-2">
+                <div class="grid grid-3">
                     <div>
                         <h4 style="margin-bottom: 12px; color: #374151;">Orari di Servizio</h4>
                         <p style="margin-bottom: 8px;">🌅 Partenza Mattina: 08:30</p>
@@ -377,7 +377,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
-        // App Data
+        // App Data with Local Storage Support
         let appData = {
             users: [
                 {id: 1, name: 'Mario Rossi', address: 'Via Roma 15, Padova', phone: '347-1234567', needsWheelchair: true},
@@ -399,6 +399,320 @@
             messages: [],
             selectedOperator: null
         };
+
+        // Local Storage Functions
+        function saveData() {
+            try {
+                const now = new Date();
+                const dataToSave = {
+                    users: appData.users,
+                    operators: appData.operators,
+                    vehicles: appData.vehicles,
+                    routes: appData.routes,
+                    schedule: appData.schedule,
+                    messages: appData.messages,
+                    lastSaved: now.toISOString()
+                };
+                
+                localStorage.setItem('centroDiurnoData', JSON.stringify(dataToSave));
+                
+                // Aggiorna l'indicatore di stato
+                const indicator = document.getElementById('last-saved-indicator');
+                if (indicator) {
+                    indicator.textContent = `📅 Salvato: ${now.toLocaleTimeString('it-IT')}`;
+                    indicator.style.color = '#059669'; // Verde per successo
+                }
+                
+                // Debug dettagliato
+                console.log('✅ SALVATAGGIO COMPLETATO:', {
+                    timestamp: now.toLocaleString('it-IT'),
+                    users: appData.users.length,
+                    operators: appData.operators.length,
+                    vehicles: appData.vehicles.length,
+                    routes: appData.routes.length,
+                    schedule: appData.schedule.length,
+                    messages: appData.messages.length
+                });
+                
+                return true;
+            } catch (error) {
+                console.error('❌ ERRORE SALVATAGGIO:', error);
+                
+                // Aggiorna indicatore con errore
+                const indicator = document.getElementById('last-saved-indicator');
+                if (indicator) {
+                    indicator.textContent = `❌ Errore salvataggio: ${new Date().toLocaleTimeString('it-IT')}`;
+                    indicator.style.color = '#dc2626'; // Rosso per errore
+                }
+                
+                alert('⚠️ ERRORE NEL SALVARE I DATI!\n\nIl browser potrebbe avere la memoria piena. Prova:\n1. Esporta un backup\n2. Pulisci la cache del browser\n3. Ricarica la pagina');
+                return false;
+            }
+        }
+
+        function loadData() {
+            try {
+                const savedData = localStorage.getItem('centroDiurnoData');
+                if (savedData) {
+                    const parsed = JSON.parse(savedData);
+                    
+                    // Carica solo i dati che esistono, mantieni i default per gli altri
+                    if (parsed.users) appData.users = parsed.users;
+                    if (parsed.operators) appData.operators = parsed.operators;
+                    if (parsed.vehicles) appData.vehicles = parsed.vehicles;
+                    if (parsed.routes) appData.routes = parsed.routes;
+                    if (parsed.schedule) appData.schedule = parsed.schedule;
+                    if (parsed.messages) appData.messages = parsed.messages;
+                    
+                    console.log('✅ Dati caricati dal salvataggio locale');
+                    
+                    // Mostra quando è stato salvato l'ultima volta
+                    if (parsed.lastSaved) {
+                        const lastSaved = new Date(parsed.lastSaved);
+                        console.log(`📅 Ultimo salvataggio: ${lastSaved.toLocaleString('it-IT')}`);
+                        
+                        // Aggiorna l'indicatore se esiste
+                        setTimeout(() => {
+                            const indicator = document.getElementById('last-saved-indicator');
+                            if (indicator) {
+                                indicator.textContent = `📅 Caricato: ${lastSaved.toLocaleTimeString('it-IT')}`;
+                            }
+                        }, 100);
+                    }
+                    
+                    return true;
+                }
+            } catch (error) {
+                console.error('❌ Errore caricamento:', error);
+                alert('⚠️ Errore nel caricare i dati salvati. Verranno usati i dati di default.');
+            }
+            return false;
+        }
+
+        function exportBackup() {
+            const backupData = {
+                users: appData.users,
+                operators: appData.operators,
+                vehicles: appData.vehicles,
+                routes: appData.routes,
+                schedule: appData.schedule,
+                messages: appData.messages,
+                exportDate: new Date().toISOString(),
+                appVersion: '1.0'
+            };
+            
+            const blob = new Blob([JSON.stringify(backupData, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `backup_centro_diurno_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            alert('✅ Backup esportato con successo!');
+        }
+
+        function importBackup() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const backupData = JSON.parse(e.target.result);
+                        
+                        // Verifica che sia un backup valido
+                        if (!backupData.users || !backupData.operators || !backupData.vehicles) {
+                            alert('❌ File di backup non valido');
+                            return;
+                        }
+                        
+                        // Chiedi conferma
+                        const exportDate = backupData.exportDate ? 
+                            new Date(backupData.exportDate).toLocaleString('it-IT') : 'Sconosciuta';
+                        
+                        if (confirm(`Vuoi ripristinare il backup del ${exportDate}?\n\n` +
+                                   `Questo sostituirà tutti i dati attuali:\n` +
+                                   `• ${backupData.users.length} utenti\n` +
+                                   `• ${backupData.operators.length} operatori\n` +
+                                   `• ${backupData.vehicles.length} veicoli`)) {
+                            
+                            appData.users = backupData.users || [];
+                            appData.operators = backupData.operators || [];
+                            appData.vehicles = backupData.vehicles || [];
+                            appData.routes = backupData.routes || [];
+                            appData.schedule = backupData.schedule || [];
+                            appData.messages = backupData.messages || [];
+                            
+                            saveData(); // Salva immediatamente
+                            updateStats();
+                            
+                            // Aggiorna la vista corrente
+                            const currentSection = document.querySelector('.section:not(.hidden)').id;
+                            renderSection(currentSection);
+                            
+                            alert('✅ Backup ripristinato con successo!');
+                        }
+                        
+                    } catch (error) {
+                        console.error('Errore import backup:', error);
+                        alert('❌ Errore nel leggere il file di backup');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        function testAllSaveFunctions() {
+            console.log('🧪 INIZIANDO TEST COMPLETO DEI SALVATAGGI...');
+            
+            // Salva stato originale
+            const originalData = JSON.parse(JSON.stringify(appData));
+            
+            let testsResults = {
+                addUser: false,
+                addOperator: false,
+                addVehicle: false,
+                deleteUser: false,
+                deleteOperator: false,
+                deleteVehicle: false,
+                excelImport: false,
+                routes: false,
+                schedule: false,
+                messages: false
+            };
+            
+            try {
+                // Test 1: Aggiungi Utente
+                console.log('🔍 Test 1: Aggiungi Utente');
+                const testUserId = Math.max(...appData.users.map(u => u.id), 0) + 1;
+                appData.users.push({id: testUserId, name: 'TEST USER', address: 'TEST ADDRESS', phone: '000-000-0000', needsWheelchair: false});
+                const saveResult1 = saveData();
+                testsResults.addUser = saveResult1;
+                console.log(saveResult1 ? '✅ Test Utente OK' : '❌ Test Utente FALLITO');
+                
+                // Test 2: Aggiungi Operatore  
+                console.log('🔍 Test 2: Aggiungi Operatore');
+                const testOpId = Math.max(...appData.operators.map(o => o.id), 0) + 1;
+                appData.operators.push({id: testOpId, name: 'TEST OPERATOR', phone: '000-000-0000', shift: 'mattina', canDriveLong: false});
+                const saveResult2 = saveData();
+                testsResults.addOperator = saveResult2;
+                console.log(saveResult2 ? '✅ Test Operatore OK' : '❌ Test Operatore FALLITO');
+                
+                // Test 3: Aggiungi Veicolo
+                console.log('🔍 Test 3: Aggiungi Veicolo');
+                const testVehicleId = Math.max(...appData.vehicles.map(v => v.id), 0) + 1;
+                appData.vehicles.push({id: testVehicleId, name: 'TEST VEHICLE', plate: 'TEST123', hasLift: false, wheelchairSpots: 0, totalSeats: 6, isLongBase: false});
+                const saveResult3 = saveData();
+                testsResults.addVehicle = saveResult3;
+                console.log(saveResult3 ? '✅ Test Veicolo OK' : '❌ Test Veicolo FALLITO');
+                
+                // Test 4: Test Eliminazioni
+                console.log('🔍 Test 4-6: Test Eliminazioni');
+                appData.users = appData.users.filter(u => u.id !== testUserId);
+                testsResults.deleteUser = saveData();
+                
+                appData.operators = appData.operators.filter(o => o.id !== testOpId);  
+                testsResults.deleteOperator = saveData();
+                
+                appData.vehicles = appData.vehicles.filter(v => v.id !== testVehicleId);
+                testsResults.deleteVehicle = saveData();
+                
+                // Test 7: Test Percorsi
+                console.log('🔍 Test 7: Test Percorsi');
+                appData.routes = [{id: 1, test: 'route'}];
+                testsResults.routes = saveData();
+                
+                // Test 8: Test Pianificazione
+                console.log('🔍 Test 8: Test Pianificazione');
+                appData.schedule = [{id: 1, test: 'schedule'}];
+                testsResults.schedule = saveData();
+                
+                // Test 9: Test Messaggi
+                console.log('🔍 Test 9: Test Messaggi');
+                appData.messages = [{id: 1, test: 'message'}];
+                testsResults.messages = saveData();
+                
+                // Ripristina dati originali
+                console.log('🔄 Ripristino dati originali...');
+                appData.users = originalData.users;
+                appData.operators = originalData.operators;
+                appData.vehicles = originalData.vehicles;
+                appData.routes = originalData.routes;
+                appData.schedule = originalData.schedule;
+                appData.messages = originalData.messages;
+                saveData();
+                
+                // Risultati finali
+                console.log('📊 RISULTATI TEST SALVATAGGI:');
+                Object.entries(testsResults).forEach(([test, result]) => {
+                    console.log(result ? `✅ ${test}: OK` : `❌ ${test}: FALLITO`);
+                });
+                
+                const allPassed = Object.values(testsResults).every(r => r);
+                const passedCount = Object.values(testsResults).filter(r => r).length;
+                const totalTests = Object.values(testsResults).length;
+                
+                if (allPassed) {
+                    alert(`🎉 TUTTI I TEST SUPERATI!\n\n✅ ${passedCount}/${totalTests} funzioni di salvataggio OK\n\n💾 Il sistema di salvataggio è completamente funzionante!`);
+                } else {
+                    alert(`⚠️ ALCUNI TEST FALLITI!\n\n✅ Superati: ${passedCount}/${totalTests}\n❌ Falliti: ${totalTests - passedCount}/${totalTests}\n\nControlla la console per dettagli.`);
+                }
+                
+            } catch (error) {
+                console.error('❌ ERRORE NEI TEST:', error);
+                alert('❌ Errore durante i test di salvataggio. Controlla la console.');
+                
+                // Ripristina comunque i dati originali
+                appData.users = originalData.users;
+                appData.operators = originalData.operators;
+                appData.vehicles = originalData.vehicles;
+                appData.routes = originalData.routes;
+                appData.schedule = originalData.schedule;
+                appData.messages = originalData.messages;
+                saveData();
+            }
+        }
+
+        function checkStorageSpace() {
+            try {
+                // Test dello spazio disponibile
+                const testKey = 'storageTest';
+                const testData = 'x'.repeat(1024); // 1KB di test
+                
+                let maxSize = 0;
+                try {
+                    for (let i = 0; i < 10000; i++) {
+                        localStorage.setItem(testKey, testData.repeat(i));
+                        maxSize = i * 1024;
+                    }
+                } catch (e) {
+                    localStorage.removeItem(testKey);
+                }
+                
+                // Calcola spazio usato dall'app
+                const currentData = localStorage.getItem('centroDiurnoData');
+                const usedSpace = currentData ? currentData.length : 0;
+                
+                console.log('💾 SPAZIO ARCHIVIAZIONE:', {
+                    spazioDisponibile: `~${Math.round(maxSize / 1024)}KB`,
+                    spazioUsatoDallaApp: `${Math.round(usedSpace / 1024)}KB`,
+                    percentualeUsata: `${Math.round((usedSpace / maxSize) * 100)}%`
+                });
+                
+                if (usedSpace / maxSize > 0.8) {
+                    alert('⚠️ ATTENZIONE: Spazio di archiviazione quasi pieno!\n\nEsporta un backup e considera di fare pulizia dei dati vecchi.');
+                }
+                
+            } catch (error) {
+                console.error('❌ Errore controllo spazio:', error);
+            }
+        }
 
         // Navigation
         function showSection(sectionName) {
@@ -520,6 +834,7 @@
                         appData.users = newUsers;
                         renderSection('users');
                         updateStats();
+                        saveData(); // Salva automaticamente
                         alert(`✅ Caricati ${newUsers.length} utenti da Excel!`);
                     }
 
@@ -595,6 +910,7 @@
                 closeModal('user-modal');
                 renderSection('users');
                 updateStats();
+                saveData(); // Salva automaticamente
                 alert('✅ Utente aggiunto con successo!');
             } else {
                 alert('❌ Compila almeno Nome e Indirizzo');
@@ -613,6 +929,7 @@
                 closeModal('operator-modal');
                 renderSection('operators');
                 updateStats();
+                saveData(); // Salva automaticamente
                 alert('✅ Operatore aggiunto con successo!');
             } else {
                 alert('❌ Inserisci almeno il nome');
@@ -633,6 +950,7 @@
                 closeModal('vehicle-modal');
                 renderSection('vehicles');
                 updateStats();
+                saveData(); // Salva automaticamente
                 alert('✅ Veicolo aggiunto con successo!');
             } else {
                 alert('❌ Compila almeno Nome e Targa');
@@ -645,6 +963,7 @@
                 const sectionMap = {users: 'users', operators: 'operators', vehicles: 'vehicles'};
                 renderSection(sectionMap[type]);
                 updateStats();
+                saveData(); // Salva automaticamente
                 alert('✅ Elemento eliminato');
             }
         }
@@ -732,6 +1051,7 @@
             appData.routes = routes;
             renderSection('routes');
             updateStats();
+            saveData(); // Salva automaticamente
             alert(`✅ ${routes.length} percorsi ottimizzati con successo!`);
         }
 
@@ -771,6 +1091,7 @@
             appData.schedule = schedule;
             renderSection('schedule');
             updateStats();
+            saveData(); // Salva automaticamente
             alert(`✅ Pianificazione trimestrale generata: ${schedule.length} giorni lavorativi!`);
         }
 
@@ -816,6 +1137,7 @@
             closeModal('message-modal');
             renderSection('messages');
             updateStats();
+            saveData(); // Salva automaticamente
             alert('✅ Messaggio inviato a tutti i sostituti disponibili!');
         }
 
@@ -1195,7 +1517,23 @@
         }
 
         // Initialize app
-        updateStats();
+        document.addEventListener('DOMContentLoaded', function() {
+            // Carica i dati salvati
+            const dataLoaded = loadData();
+            
+            // Aggiorna le statistiche
+            updateStats();
+            
+            // Mostra un messaggio se i dati sono stati caricati
+            if (dataLoaded) {
+                setTimeout(() => {
+                    console.log('🔄 App inizializzata con dati salvati');
+                }, 1000);
+            }
+        });
+        
+        // Auto-save ogni 30 secondi (backup di sicurezza)
+        setInterval(saveData, 30000);
         
         // Close modal when clicking outside
         document.addEventListener('click', function(event) {
