@@ -53,19 +53,24 @@
         /* Modal */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
         .modal.show { display: flex; align-items: center; justify-content: center; }
-        .modal-content { background: white; padding: 24px; border-radius: 8px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+        .modal-content { background: white; padding: 24px; border-radius: 8px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
         
         /* Forms */
         .form-group { margin-bottom: 16px; }
         .form-label { display: block; margin-bottom: 4px; font-weight: 500; color: #374151; }
         .form-input { width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
-        .form-checkbox { display: flex; align-items: center; gap: 8px; }
+        .form-checkbox { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .form-radio { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+        .form-2-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         
         /* Badges */
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; margin: 2px; }
         .badge-success { background: #dcfce7; color: #166534; }
         .badge-warning { background: #fef3c7; color: #92400e; }
         .badge-danger { background: #fecaca; color: #991b1b; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
+        .badge-purple { background: #e9d5ff; color: #7c2d12; }
         
         /* Utilities */
         .hidden { display: none; }
@@ -96,6 +101,10 @@
         .action-buttons { display: flex; gap: 4px; flex-wrap: wrap; }
         .action-buttons .btn { padding: 6px 10px; font-size: 11px; margin: 1px; }
         
+        /* User info display */
+        .user-info { font-size: 13px; line-height: 1.4; }
+        .user-info .details { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        
         /* Responsive */
         @media (max-width: 768px) {
             .container { padding: 8px; }
@@ -104,11 +113,13 @@
             .stats { grid-template-columns: 1fr; }
             .grid-2, .grid-3 { grid-template-columns: 1fr; }
             .route-info { grid-template-columns: 1fr; }
-            .modal-content { width: 95%; padding: 16px; }
+            .modal-content { width: 95%; padding: 16px; max-width: 95vw; }
             .flex[style*="gap"] { flex-direction: column; align-items: stretch; }
             .flex[style*="gap"] .btn { margin: 2px 0; }
             .action-buttons { flex-direction: column; }
             .action-buttons .btn { width: 100%; }
+            .form-2-cols { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
 </head>
@@ -176,19 +187,19 @@
                 <div class="flex justify-between mb-20">
                     <h2>👥 Gestione Utenti</h2>
                     <div class="flex" style="gap: 8px; flex-wrap: wrap;">
-                        <button class="btn btn-secondary" onclick="downloadExcelTemplate()" title="Scarica un file Excel di esempio">📥 Template</button>
-                        <button class="btn btn-secondary" onclick="exportUsersToExcel()" title="Esporta utenti attuali in Excel">📤 Esporta Excel</button>
-                        <button class="btn btn-success" onclick="document.getElementById('excel-file').click()" title="Carica utenti da file Excel">📁 Carica Excel</button>
-                        <button class="btn btn-primary" onclick="openModal('user-modal')">➕ Aggiungi</button>
+                        <button class="btn btn-secondary" onclick="downloadUsersExcelTemplate()" title="Scarica template Excel utenti">📥 Template Utenti</button>
+                        <button class="btn btn-secondary" onclick="exportUsersToExcel()" title="Esporta utenti attuali in Excel">📤 Esporta Utenti</button>
+                        <button class="btn btn-success" onclick="document.getElementById('users-excel-file').click()" title="Carica utenti da file Excel">📁 Carica Excel</button>
+                        <button class="btn btn-primary" onclick="openAddUserModal()">➕ Aggiungi</button>
                     </div>
                 </div>
-                <input type="file" id="excel-file" accept=".xlsx,.xls" style="display: none;" onchange="loadExcelFile(event)">
+                <input type="file" id="users-excel-file" accept=".xlsx,.xls" style="display: none;" onchange="loadUsersExcelFile(event)">
                 
-                <!-- Info box per Excel -->
+                <!-- Info box per Excel utenti -->
                 <div style="background: #f0f9ff; border: 1px solid #0ea5e9; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 14px;">
-                    <strong>📋 Formato file Excel:</strong><br>
-                    <strong>Colonna A:</strong> Nome utente | <strong>Colonna B:</strong> Indirizzo completo | <strong>Colonna C:</strong> Telefono | <strong>Colonna D:</strong> Carrozzina (Sì/No)<br>
-                    <em>💡 Scarica il "Template Excel" per avere un esempio pronto!</em>
+                    <strong>📋 Formato file Excel Utenti:</strong><br>
+                    <strong>A:</strong> Nome | <strong>B:</strong> Indirizzo | <strong>C:</strong> Telefono | <strong>D:</strong> Carrozzina (Sì/No) | <strong>E:</strong> Giorni (Lun,Mar,Mer,Gio,Ven) | <strong>F:</strong> Turni (Mattina/Pomeriggio/Entrambi) | <strong>G:</strong> Priorità (Primo/Normale/Ultimo)<br>
+                    <em>💡 Scarica il "Template Utenti" per avere un esempio completo!</em>
                 </div>
                 
                 <div id="users-table"></div>
@@ -200,8 +211,22 @@
             <div class="card">
                 <div class="flex justify-between mb-20">
                     <h2>🚗 Gestione Operatori</h2>
-                    <button class="btn btn-primary" onclick="openAddOperatorModal()">➕ Aggiungi Operatore</button>
+                    <div class="flex" style="gap: 8px; flex-wrap: wrap;">
+                        <button class="btn btn-secondary" onclick="downloadOperatorsExcelTemplate()" title="Scarica template Excel operatori">📥 Template Operatori</button>
+                        <button class="btn btn-secondary" onclick="exportOperatorsToExcel()" title="Esporta operatori attuali in Excel">📤 Esporta Operatori</button>
+                        <button class="btn btn-success" onclick="document.getElementById('operators-excel-file').click()" title="Carica operatori da file Excel">📁 Carica Excel</button>
+                        <button class="btn btn-primary" onclick="openAddOperatorModal()">➕ Aggiungi Operatore</button>
+                    </div>
                 </div>
+                <input type="file" id="operators-excel-file" accept=".xlsx,.xls" style="display: none;" onchange="loadOperatorsExcelFile(event)">
+                
+                <!-- Info box per Excel operatori -->
+                <div style="background: #f0fdf4; border: 1px solid #22c55e; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 14px;">
+                    <strong>📋 Formato file Excel Operatori:</strong><br>
+                    <strong>A:</strong> Nome | <strong>B:</strong> Telefono | <strong>C:</strong> Turno (Mattina/Pomeriggio/Entrambi) | <strong>D:</strong> Passo Lungo (Sì/No)<br>
+                    <em>💡 Scarica il "Template Operatori" per avere un esempio pronto!</em>
+                </div>
+                
                 <div id="operators-grid" class="grid grid-3"></div>
             </div>
         </div>
@@ -257,27 +282,78 @@
     <!-- User Modal -->
     <div id="user-modal" class="modal">
         <div class="modal-content">
-            <h3 style="margin-bottom: 20px;">Aggiungi Nuovo Utente</h3>
-            <div class="form-group">
-                <label class="form-label">Nome Completo</label>
-                <input id="user-name" class="form-input" type="text" placeholder="Nome e cognome">
+            <h3 id="user-modal-title" style="margin-bottom: 20px;">Aggiungi Nuovo Utente</h3>
+            
+            <div class="form-2-cols">
+                <div class="form-group">
+                    <label class="form-label">Nome Completo</label>
+                    <input id="user-name" class="form-input" type="text" placeholder="Nome e cognome">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Numero di Telefono</label>
+                    <input id="user-phone" class="form-input" type="text" placeholder="333-1234567">
+                </div>
             </div>
+            
             <div class="form-group">
                 <label class="form-label">Indirizzo Completo</label>
                 <input id="user-address" class="form-input" type="text" placeholder="Via, numero civico, città">
             </div>
-            <div class="form-group">
-                <label class="form-label">Numero di Telefono</label>
-                <input id="user-phone" class="form-input" type="text" placeholder="333-1234567">
-            </div>
+            
             <div class="form-group">
                 <label class="form-checkbox">
                     <input id="user-wheelchair" type="checkbox">
                     <span>Necessita di carrozzina</span>
                 </label>
             </div>
+            
+            <div class="form-group">
+                <label class="form-label">Giorni di trasporto necessari</label>
+                <div class="form-grid">
+                    <label class="form-checkbox">
+                        <input id="user-day-1" type="checkbox">
+                        <span>Lunedì</span>
+                    </label>
+                    <label class="form-checkbox">
+                        <input id="user-day-2" type="checkbox">
+                        <span>Martedì</span>
+                    </label>
+                    <label class="form-checkbox">
+                        <input id="user-day-3" type="checkbox">
+                        <span>Mercoledì</span>
+                    </label>
+                    <label class="form-checkbox">
+                        <input id="user-day-4" type="checkbox">
+                        <span>Giovedì</span>
+                    </label>
+                    <label class="form-checkbox">
+                        <input id="user-day-5" type="checkbox">
+                        <span>Venerdì</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="form-2-cols">
+                <div class="form-group">
+                    <label class="form-label">Turni necessari</label>
+                    <select id="user-shifts" class="form-input">
+                        <option value="entrambi">Entrambi i turni</option>
+                        <option value="mattina">Solo mattina (08:30)</option>
+                        <option value="pomeriggio">Solo pomeriggio (15:30)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Priorità di carico</label>
+                    <select id="user-priority" class="form-input">
+                        <option value="normale">Normale</option>
+                        <option value="primo">Primo (caricare per primo)</option>
+                        <option value="ultimo">Ultimo (caricare per ultimo)</option>
+                    </select>
+                </div>
+            </div>
+            
             <div class="flex" style="gap: 12px;">
-                <button class="btn btn-primary" onclick="addUser()" style="flex: 1;">Aggiungi</button>
+                <button id="user-save-btn" class="btn btn-primary" onclick="saveUser()" style="flex: 1;">Aggiungi</button>
                 <button class="btn btn-secondary" onclick="closeModal('user-modal')" style="flex: 1;">Annulla</button>
             </div>
         </div>
@@ -320,36 +396,53 @@
     <div id="vehicle-modal" class="modal">
         <div class="modal-content">
             <h3 id="vehicle-modal-title" style="margin-bottom: 20px;">Aggiungi Nuovo Veicolo</h3>
-            <div class="form-group">
-                <label class="form-label">Nome Veicolo</label>
-                <input id="vehicle-name" class="form-input" type="text" placeholder="es: Pulmino D">
+            
+            <div class="form-2-cols">
+                <div class="form-group">
+                    <label class="form-label">Nome Veicolo</label>
+                    <input id="vehicle-name" class="form-input" type="text" placeholder="es: Pulmino D">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Targa</label>
+                    <input id="vehicle-plate" class="form-input" type="text" placeholder="es: AB123CD">
+                </div>
             </div>
+            
             <div class="form-group">
-                <label class="form-label">Targa</label>
-                <input id="vehicle-plate" class="form-input" type="text" placeholder="es: AB123CD">
+                <label class="form-label">Accessibilità e Pedane</label>
+                <div class="form-grid">
+                    <label class="form-checkbox">
+                        <input id="vehicle-lift" type="checkbox">
+                        <span>Pedana elevatrice</span>
+                    </label>
+                    <label class="form-checkbox">
+                        <input id="vehicle-side-ramps" type="checkbox">
+                        <span>Pedane laterali</span>
+                    </label>
+                </div>
+                <small style="color: #6b7280; font-size: 12px;">Le pedane laterali facilitano la salita degli utenti con difficoltà motorie</small>
             </div>
-            <div class="form-group">
-                <label class="form-checkbox">
-                    <input id="vehicle-lift" type="checkbox">
-                    <span>Ha pedana elevatrice</span>
-                </label>
+            
+            <div class="form-2-cols">
+                <div class="form-group">
+                    <label class="form-label">Numero posti carrozzina</label>
+                    <input id="vehicle-wheelchair" class="form-input" type="number" min="0" max="8" value="0" placeholder="0">
+                    <small style="color: #6b7280; font-size: 12px;">Inserisci 0 se non può trasportare carrozzine</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Posti totali (escluso autista)</label>
+                    <input id="vehicle-seats" class="form-input" type="number" min="4" max="12" value="6" placeholder="6">
+                    <small style="color: #6b7280; font-size: 12px;">Numero totale di posti per utenti</small>
+                </div>
             </div>
-            <div class="form-group">
-                <label class="form-label">Numero posti carrozzina</label>
-                <input id="vehicle-wheelchair" class="form-input" type="number" min="0" max="8" value="0" placeholder="0">
-                <small style="color: #6b7280; font-size: 12px;">Inserisci 0 se non può trasportare carrozzine</small>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Posti totali disponibili (escluso autista)</label>
-                <input id="vehicle-seats" class="form-input" type="number" min="4" max="12" value="6" placeholder="6">
-                <small style="color: #6b7280; font-size: 12px;">Numero totale di posti per utenti</small>
-            </div>
+            
             <div class="form-group">
                 <label class="form-checkbox">
                     <input id="vehicle-longbase" type="checkbox">
                     <span>Passo lungo (richiede abilitazione speciale)</span>
                 </label>
             </div>
+            
             <div class="flex" style="gap: 12px;">
                 <button id="vehicle-save-btn" class="btn btn-primary" onclick="saveVehicle()" style="flex: 1;">Aggiungi</button>
                 <button class="btn btn-secondary" onclick="closeModal('vehicle-modal')" style="flex: 1;">Annulla</button>
@@ -387,9 +480,36 @@
         // App Data with Local Storage Support
         let appData = {
             users: [
-                {id: 1, name: 'Mario Rossi', address: 'Via Roma 15, Padova', phone: '347-1234567', needsWheelchair: true},
-                {id: 2, name: 'Anna Verdi', address: 'Via Venezia 22, Padova', phone: '349-2345678', needsWheelchair: false},
-                {id: 3, name: 'Luigi Bianchi', address: 'Corso Milano 8, Padova', phone: '346-3456789', needsWheelchair: true}
+                {
+                    id: 1, 
+                    name: 'Mario Rossi', 
+                    address: 'Via Roma 15, Padova', 
+                    phone: '347-1234567', 
+                    needsWheelchair: true,
+                    transportDays: [1, 2, 3, 4, 5], // Lun-Ven
+                    shifts: 'entrambi', // mattina, pomeriggio, entrambi
+                    priority: 'normale' // primo, normale, ultimo
+                },
+                {
+                    id: 2, 
+                    name: 'Anna Verdi', 
+                    address: 'Via Venezia 22, Padova', 
+                    phone: '349-2345678', 
+                    needsWheelchair: false,
+                    transportDays: [1, 3, 5], // Lun-Mer-Ven
+                    shifts: 'mattina',
+                    priority: 'primo'
+                },
+                {
+                    id: 3, 
+                    name: 'Luigi Bianchi', 
+                    address: 'Corso Milano 8, Padova', 
+                    phone: '346-3456789', 
+                    needsWheelchair: true,
+                    transportDays: [2, 4], // Mar-Gio
+                    shifts: 'pomeriggio',
+                    priority: 'ultimo'
+                }
             ],
             operators: [
                 {id: 1, name: 'Marco Operatore', phone: '333-1111111', shift: 'mattina', canDriveLong: true},
@@ -397,17 +517,49 @@
                 {id: 3, name: 'Paolo Guida', phone: '333-3333333', shift: 'pomeriggio', canDriveLong: true}
             ],
             vehicles: [
-                {id: 1, name: 'Pulmino A', plate: 'AB123CD', hasLift: true, wheelchairSpots: 2, totalSeats: 6, isLongBase: false},
-                {id: 2, name: 'Pulmino B', plate: 'EF456GH', hasLift: false, wheelchairSpots: 0, totalSeats: 6, isLongBase: false},
-                {id: 3, name: 'Pulmino C', plate: 'IL789MN', hasLift: true, wheelchairSpots: 3, totalSeats: 8, isLongBase: true}
+                {
+                    id: 1, 
+                    name: 'Pulmino A', 
+                    plate: 'AB123CD', 
+                    hasLift: true, 
+                    hasSideRamps: true,
+                    wheelchairSpots: 2, 
+                    totalSeats: 6, 
+                    isLongBase: false
+                },
+                {
+                    id: 2, 
+                    name: 'Pulmino B', 
+                    plate: 'EF456GH', 
+                    hasLift: false, 
+                    hasSideRamps: true,
+                    wheelchairSpots: 0, 
+                    totalSeats: 6, 
+                    isLongBase: false
+                },
+                {
+                    id: 3, 
+                    name: 'Pulmino C', 
+                    plate: 'IL789MN', 
+                    hasLift: true, 
+                    hasSideRamps: false,
+                    wheelchairSpots: 3, 
+                    totalSeats: 8, 
+                    isLongBase: true
+                }
             ],
             routes: [],
             schedule: [],
             messages: [],
             selectedOperator: null,
             editingOperator: null,
-            editingVehicle: null
+            editingVehicle: null,
+            editingUser: null
         };
+
+        // Day names for display
+        const dayNames = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+        const dayNamesLong = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
 
         // Local Storage Functions
         function saveData() {
@@ -502,9 +654,23 @@
                     const parsed = JSON.parse(savedData);
                     
                     // Carica solo i dati che esistono, mantieni i default per gli altri
-                    if (parsed.users) appData.users = parsed.users;
+                    if (parsed.users) {
+                        // Migrazione dati: aggiungi campi mancanti agli utenti esistenti
+                        appData.users = parsed.users.map(user => ({
+                            ...user,
+                            transportDays: user.transportDays || [1, 2, 3, 4, 5],
+                            shifts: user.shifts || 'entrambi',
+                            priority: user.priority || 'normale'
+                        }));
+                    }
                     if (parsed.operators) appData.operators = parsed.operators;
-                    if (parsed.vehicles) appData.vehicles = parsed.vehicles;
+                    if (parsed.vehicles) {
+                        // Migrazione dati: aggiungi campo hasSideRamps ai veicoli esistenti
+                        appData.vehicles = parsed.vehicles.map(vehicle => ({
+                            ...vehicle,
+                            hasSideRamps: vehicle.hasSideRamps !== undefined ? vehicle.hasSideRamps : false
+                        }));
+                    }
                     if (parsed.routes) appData.routes = parsed.routes;
                     if (parsed.schedule) appData.schedule = parsed.schedule;
                     if (parsed.messages) appData.messages = parsed.messages;
@@ -515,14 +681,6 @@
                     if (parsed.lastSaved) {
                         const lastSaved = new Date(parsed.lastSaved);
                         console.log(`📅 Ultimo salvataggio: ${lastSaved.toLocaleString('it-IT')}`);
-                        
-                        // Aggiorna l'indicatore se esiste
-                        setTimeout(() => {
-                            const indicator = document.getElementById('last-saved-indicator');
-                            if (indicator) {
-                                indicator.textContent = `📅 Caricato: ${lastSaved.toLocaleTimeString('it-IT')}`;
-                            }
-                        }, 100);
                     }
                     
                     return true;
@@ -570,6 +728,8 @@
                 appData.editingOperator = null;
             } else if (modalId === 'vehicle-modal') {
                 appData.editingVehicle = null;
+            } else if (modalId === 'user-modal') {
+                appData.editingUser = null;
             }
         }
 
@@ -584,6 +744,99 @@
                     input.value = '';
                 }
             });
+        }
+
+        // User functions
+        function openAddUserModal() {
+            appData.editingUser = null;
+            document.getElementById('user-modal-title').textContent = 'Aggiungi Nuovo Utente';
+            document.getElementById('user-save-btn').textContent = 'Aggiungi';
+            clearForm('user-modal');
+            openModal('user-modal');
+        }
+
+        function editUser(id) {
+            const user = appData.users.find(u => u.id === id);
+            if (!user) return;
+            
+            appData.editingUser = user;
+            
+            // Popola il form
+            document.getElementById('user-name').value = user.name;
+            document.getElementById('user-address').value = user.address;
+            document.getElementById('user-phone').value = user.phone || '';
+            document.getElementById('user-wheelchair').checked = user.needsWheelchair;
+            
+            // Giorni di trasporto
+            for (let i = 1; i <= 5; i++) {
+                document.getElementById(`user-day-${i}`).checked = user.transportDays.includes(i);
+            }
+            
+            document.getElementById('user-shifts').value = user.shifts;
+            document.getElementById('user-priority').value = user.priority;
+            
+            // Cambia titolo e pulsante
+            document.getElementById('user-modal-title').textContent = `Modifica Utente: ${user.name}`;
+            document.getElementById('user-save-btn').textContent = 'Salva Modifiche';
+            
+            openModal('user-modal');
+        }
+
+        function saveUser() {
+            const name = document.getElementById('user-name').value.trim();
+            const address = document.getElementById('user-address').value.trim();
+            const phone = document.getElementById('user-phone').value.trim();
+            const needsWheelchair = document.getElementById('user-wheelchair').checked;
+            
+            // Giorni di trasporto
+            const transportDays = [];
+            for (let i = 1; i <= 5; i++) {
+                if (document.getElementById(`user-day-${i}`).checked) {
+                    transportDays.push(i);
+                }
+            }
+            
+            const shifts = document.getElementById('user-shifts').value;
+            const priority = document.getElementById('user-priority').value;
+            
+            if (!name || !address) {
+                alert('❌ Compila almeno Nome e Indirizzo');
+                return;
+            }
+            
+            if (transportDays.length === 0) {
+                alert('❌ Seleziona almeno un giorno di trasporto');
+                return;
+            }
+            
+            if (appData.editingUser) {
+                // Modifica utente esistente
+                appData.editingUser.name = name;
+                appData.editingUser.address = address;
+                appData.editingUser.phone = phone;
+                appData.editingUser.needsWheelchair = needsWheelchair;
+                appData.editingUser.transportDays = transportDays;
+                appData.editingUser.shifts = shifts;
+                appData.editingUser.priority = priority;
+                
+                closeModal('user-modal');
+                renderSection('users');
+                updateStats();
+                saveData();
+                alert('✅ Utente modificato con successo!');
+            } else {
+                // Aggiungi nuovo utente
+                const id = Math.max(...appData.users.map(u => u.id), 0) + 1;
+                appData.users.push({
+                    id, name, address, phone, needsWheelchair, transportDays, shifts, priority
+                });
+                
+                closeModal('user-modal');
+                renderSection('users');
+                updateStats();
+                saveData();
+                alert('✅ Utente aggiunto con successo!');
+            }
         }
 
         // Operator functions
@@ -669,6 +922,7 @@
             document.getElementById('vehicle-name').value = vehicle.name;
             document.getElementById('vehicle-plate').value = vehicle.plate;
             document.getElementById('vehicle-lift').checked = vehicle.hasLift;
+            document.getElementById('vehicle-side-ramps').checked = vehicle.hasSideRamps || false;
             document.getElementById('vehicle-wheelchair').value = vehicle.wheelchairSpots;
             document.getElementById('vehicle-seats').value = vehicle.totalSeats;
             document.getElementById('vehicle-longbase').checked = vehicle.isLongBase;
@@ -684,6 +938,7 @@
             const name = document.getElementById('vehicle-name').value.trim();
             const plate = document.getElementById('vehicle-plate').value.trim();
             const hasLift = document.getElementById('vehicle-lift').checked;
+            const hasSideRamps = document.getElementById('vehicle-side-ramps').checked;
             const wheelchairSpots = parseInt(document.getElementById('vehicle-wheelchair').value) || 0;
             const totalSeats = parseInt(document.getElementById('vehicle-seats').value) || 6;
             const isLongBase = document.getElementById('vehicle-longbase').checked;
@@ -698,6 +953,7 @@
                 appData.editingVehicle.name = name;
                 appData.editingVehicle.plate = plate;
                 appData.editingVehicle.hasLift = hasLift;
+                appData.editingVehicle.hasSideRamps = hasSideRamps;
                 appData.editingVehicle.wheelchairSpots = wheelchairSpots;
                 appData.editingVehicle.totalSeats = totalSeats;
                 appData.editingVehicle.isLongBase = isLongBase;
@@ -710,7 +966,7 @@
             } else {
                 // Aggiungi nuovo veicolo
                 const id = Math.max(...appData.vehicles.map(v => v.id), 0) + 1;
-                appData.vehicles.push({id, name, plate, hasLift, wheelchairSpots, totalSeats, isLongBase});
+                appData.vehicles.push({id, name, plate, hasLift, hasSideRamps, wheelchairSpots, totalSeats, isLongBase});
                 
                 closeModal('vehicle-modal');
                 renderSection('vehicles');
@@ -720,7 +976,8 @@
             }
         }
 
-        function loadExcelFile(event) {
+        // Excel functions for Users
+        function loadUsersExcelFile(event) {
             const file = event.target.files[0];
             if (!file) return;
 
@@ -730,11 +987,8 @@
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
                     
-                    // Prendi il primo foglio
                     const sheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[sheetName];
-                    
-                    // Converti in JSON
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                     
                     if (jsonData.length < 2) {
@@ -742,7 +996,6 @@
                         return;
                     }
 
-                    // Processa i dati (ignora la prima riga se è intestazione)
                     const newUsers = [];
                     let startRow = 0;
                     
@@ -751,13 +1004,12 @@
                     if (firstRow && typeof firstRow[0] === 'string' && 
                         (firstRow[0].toLowerCase().includes('nome') || 
                          firstRow[0].toLowerCase().includes('name'))) {
-                        startRow = 1; // Salta l'intestazione
+                        startRow = 1;
                     }
 
                     for (let i = startRow; i < jsonData.length; i++) {
                         const row = jsonData[i];
                         
-                        // Salta righe vuote
                         if (!row || !row[0] || row[0].toString().trim() === '') continue;
                         
                         const name = row[0] ? row[0].toString().trim() : '';
@@ -767,15 +1019,44 @@
                             (row[3].toString().toLowerCase().includes('s') || 
                              row[3].toString().toLowerCase().includes('1') ||
                              row[3].toString().toLowerCase().includes('true')) : false;
+                        
+                        // Parsing giorni (es: "Lun,Mar,Mer,Gio,Ven" o "1,2,3,4,5")
+                        let transportDays = [1, 2, 3, 4, 5]; // Default tutti i giorni
+                        if (row[4]) {
+                            const daysStr = row[4].toString().toLowerCase();
+                            transportDays = [];
+                            
+                            if (daysStr.includes('lun') || daysStr.includes('1')) transportDays.push(1);
+                            if (daysStr.includes('mar') || daysStr.includes('2')) transportDays.push(2);
+                            if (daysStr.includes('mer') || daysStr.includes('3')) transportDays.push(3);
+                            if (daysStr.includes('gio') || daysStr.includes('4')) transportDays.push(4);
+                            if (daysStr.includes('ven') || daysStr.includes('5')) transportDays.push(5);
+                            
+                            if (transportDays.length === 0) transportDays = [1, 2, 3, 4, 5];
+                        }
+                        
+                        // Parsing turni
+                        let shifts = 'entrambi';
+                        if (row[5]) {
+                            const shiftsStr = row[5].toString().toLowerCase();
+                            if (shiftsStr.includes('mattina')) shifts = 'mattina';
+                            else if (shiftsStr.includes('pomeriggio')) shifts = 'pomeriggio';
+                        }
+                        
+                        // Parsing priorità
+                        let priority = 'normale';
+                        if (row[6]) {
+                            const priorityStr = row[6].toString().toLowerCase();
+                            if (priorityStr.includes('primo')) priority = 'primo';
+                            else if (priorityStr.includes('ultimo')) priority = 'ultimo';
+                        }
 
                         if (name && address) {
                             const id = Math.max(...appData.users.map(u => u.id), 0) + newUsers.length + 1;
                             newUsers.push({
-                                id: id,
-                                name: name,
-                                address: address,
-                                phone: phone,
-                                needsWheelchair: wheelchair
+                                id, name, address, phone, 
+                                needsWheelchair: wheelchair,
+                                transportDays, shifts, priority
                             });
                         }
                     }
@@ -785,45 +1066,41 @@
                         return;
                     }
 
-                    // Chiedi conferma
                     const message = `Trovati ${newUsers.length} utenti nel file Excel.\n\n` +
                                   `Primi 3 esempi:\n` +
-                                  newUsers.slice(0, 3).map(u => `• ${u.name} - ${u.address}`).join('\n') +
+                                  newUsers.slice(0, 3).map(u => `• ${u.name} - ${u.address} (${u.shifts})`).join('\n') +
                                   `\n\nVuoi sostituire tutti gli utenti esistenti con questi?`;
                     
                     if (confirm(message)) {
                         appData.users = newUsers;
                         renderSection('users');
                         updateStats();
-                        saveData(); // Salva automaticamente
+                        saveData();
                         alert(`✅ Caricati ${newUsers.length} utenti da Excel!`);
                     }
 
                 } catch (error) {
-                    console.error('Errore lettura Excel:', error);
+                    console.error('Errore lettura Excel utenti:', error);
                     alert('❌ Errore nel leggere il file Excel. Assicurati che sia un file .xlsx o .xls valido.');
                 }
             };
             
             reader.readAsArrayBuffer(file);
-            // Reset dell'input per permettere di ricaricare lo stesso file
             event.target.value = '';
         }
 
-        function downloadExcelTemplate() {
-            // Crea un template Excel di esempio
+        function downloadUsersExcelTemplate() {
             const templateData = [
-                ['Nome', 'Indirizzo', 'Telefono', 'Carrozzina'],
-                ['Mario Rossi', 'Via Roma 15, Padova', '347-1234567', 'Sì'],
-                ['Anna Verdi', 'Via Venezia 22, Padova', '349-2345678', 'No'],
-                ['Luigi Bianchi', 'Corso Milano 8, Padova', '346-3456789', 'Sì']
+                ['Nome', 'Indirizzo', 'Telefono', 'Carrozzina', 'Giorni', 'Turni', 'Priorità'],
+                ['Mario Rossi', 'Via Roma 15, Padova', '347-1234567', 'Sì', 'Lun,Mar,Mer,Gio,Ven', 'Entrambi', 'Normale'],
+                ['Anna Verdi', 'Via Venezia 22, Padova', '349-2345678', 'No', 'Lun,Mer,Ven', 'Mattina', 'Primo'],
+                ['Luigi Bianchi', 'Corso Milano 8, Padova', '346-3456789', 'Sì', 'Mar,Gio', 'Pomeriggio', 'Ultimo']
             ];
 
             const ws = XLSX.utils.aoa_to_sheet(templateData);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Utenti");
+            XLSX.utils.book_append_sheet(wb, ws, "Template Utenti");
             
-            // Scarica il file
             XLSX.writeFile(wb, "template_utenti_centro_diurno.xlsx");
         }
 
@@ -833,17 +1110,25 @@
                 return;
             }
 
-            // Prepara i dati per l'export
             const exportData = [
-                ['Nome', 'Indirizzo', 'Telefono', 'Carrozzina']
+                ['Nome', 'Indirizzo', 'Telefono', 'Carrozzina', 'Giorni', 'Turni', 'Priorità']
             ];
 
             appData.users.forEach(user => {
+                const daysStr = user.transportDays.map(d => dayNames[d]).join(',');
+                const shiftsStr = user.shifts === 'entrambi' ? 'Entrambi' : 
+                                 user.shifts === 'mattina' ? 'Mattina' : 'Pomeriggio';
+                const priorityStr = user.priority === 'primo' ? 'Primo' : 
+                                   user.priority === 'ultimo' ? 'Ultimo' : 'Normale';
+
                 exportData.push([
                     user.name,
                     user.address,
                     user.phone || '',
-                    user.needsWheelchair ? 'Sì' : 'No'
+                    user.needsWheelchair ? 'Sì' : 'No',
+                    daysStr,
+                    shiftsStr,
+                    priorityStr
                 ]);
             });
 
@@ -851,31 +1136,144 @@
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Utenti Centro Diurno");
             
-            // Scarica il file con data corrente
             const today = new Date().toISOString().split('T')[0];
             XLSX.writeFile(wb, `utenti_centro_diurno_${today}.xlsx`);
             
             alert(`✅ Esportati ${appData.users.length} utenti in Excel!`);
         }
 
-        // Add functions (mantengo per retrocompatibilità)
-        function addUser() {
-            const name = document.getElementById('user-name').value.trim();
-            const address = document.getElementById('user-address').value.trim();
-            const phone = document.getElementById('user-phone').value.trim();
-            const needsWheelchair = document.getElementById('user-wheelchair').checked;
+        // Excel functions for Operators
+        function loadOperatorsExcelFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    if (jsonData.length < 2) {
+                        alert('❌ Il file Excel deve contenere almeno una riga di dati oltre all\'intestazione');
+                        return;
+                    }
+
+                    const newOperators = [];
+                    let startRow = 0;
+                    
+                    // Controlla se la prima riga sembra essere un'intestazione
+                    const firstRow = jsonData[0];
+                    if (firstRow && typeof firstRow[0] === 'string' && 
+                        (firstRow[0].toLowerCase().includes('nome') || 
+                         firstRow[0].toLowerCase().includes('name'))) {
+                        startRow = 1;
+                    }
+
+                    for (let i = startRow; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        
+                        if (!row || !row[0] || row[0].toString().trim() === '') continue;
+                        
+                        const name = row[0] ? row[0].toString().trim() : '';
+                        const phone = row[1] ? row[1].toString().trim() : '';
+                        
+                        let shift = 'mattina';
+                        if (row[2]) {
+                            const shiftStr = row[2].toString().toLowerCase();
+                            if (shiftStr.includes('pomeriggio')) shift = 'pomeriggio';
+                            else if (shiftStr.includes('entrambi')) shift = 'entrambi';
+                        }
+                        
+                        const canDriveLong = row[3] ? 
+                            (row[3].toString().toLowerCase().includes('s') || 
+                             row[3].toString().toLowerCase().includes('1') ||
+                             row[3].toString().toLowerCase().includes('true')) : false;
+
+                        if (name) {
+                            const id = Math.max(...appData.operators.map(o => o.id), 0) + newOperators.length + 1;
+                            newOperators.push({
+                                id, name, phone, shift, canDriveLong
+                            });
+                        }
+                    }
+
+                    if (newOperators.length === 0) {
+                        alert('❌ Nessun operatore valido trovato nel file. Controlla il formato.');
+                        return;
+                    }
+
+                    const message = `Trovati ${newOperators.length} operatori nel file Excel.\n\n` +
+                                  `Primi 3 esempi:\n` +
+                                  newOperators.slice(0, 3).map(o => `• ${o.name} - ${o.shift}`).join('\n') +
+                                  `\n\nVuoi sostituire tutti gli operatori esistenti con questi?`;
+                    
+                    if (confirm(message)) {
+                        appData.operators = newOperators;
+                        renderSection('operators');
+                        updateStats();
+                        saveData();
+                        alert(`✅ Caricati ${newOperators.length} operatori da Excel!`);
+                    }
+
+                } catch (error) {
+                    console.error('Errore lettura Excel operatori:', error);
+                    alert('❌ Errore nel leggere il file Excel. Assicurati che sia un file .xlsx o .xls valido.');
+                }
+            };
             
-            if (name && address) {
-                const id = Math.max(...appData.users.map(u => u.id), 0) + 1;
-                appData.users.push({id, name, address, phone, needsWheelchair});
-                closeModal('user-modal');
-                renderSection('users');
-                updateStats();
-                saveData(); // Salva automaticamente
-                alert('✅ Utente aggiunto con successo!');
-            } else {
-                alert('❌ Compila almeno Nome e Indirizzo');
+            reader.readAsArrayBuffer(file);
+            event.target.value = '';
+        }
+
+        function downloadOperatorsExcelTemplate() {
+            const templateData = [
+                ['Nome', 'Telefono', 'Turno', 'Passo Lungo'],
+                ['Marco Operatore', '333-1111111', 'Mattina', 'Sì'],
+                ['Laura Autista', '333-2222222', 'Entrambi', 'No'],
+                ['Paolo Guida', '333-3333333', 'Pomeriggio', 'Sì']
+            ];
+
+            const ws = XLSX.utils.aoa_to_sheet(templateData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Template Operatori");
+            
+            XLSX.writeFile(wb, "template_operatori_centro_diurno.xlsx");
+        }
+
+        function exportOperatorsToExcel() {
+            if (appData.operators.length === 0) {
+                alert('❌ Nessun operatore da esportare');
+                return;
             }
+
+            const exportData = [
+                ['Nome', 'Telefono', 'Turno', 'Passo Lungo']
+            ];
+
+            appData.operators.forEach(operator => {
+                const shiftStr = operator.shift === 'entrambi' ? 'Entrambi' : 
+                                operator.shift === 'mattina' ? 'Mattina' : 'Pomeriggio';
+
+                exportData.push([
+                    operator.name,
+                    operator.phone || '',
+                    shiftStr,
+                    operator.canDriveLong ? 'Sì' : 'No'
+                ]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Operatori Centro Diurno");
+            
+            const today = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(wb, `operatori_centro_diurno_${today}.xlsx`);
+            
+            alert(`✅ Esportati ${appData.operators.length} operatori in Excel!`);
         }
 
         function deleteItem(type, id) {
@@ -884,7 +1282,7 @@
                 const sectionMap = {users: 'users', operators: 'operators', vehicles: 'vehicles'};
                 renderSection(sectionMap[type]);
                 updateStats();
-                saveData(); // Salva automaticamente
+                saveData();
                 alert('✅ Elemento eliminato');
             }
         }
@@ -972,7 +1370,7 @@
             appData.routes = routes;
             renderSection('routes');
             updateStats();
-            saveData(); // Salva automaticamente
+            saveData();
             alert(`✅ ${routes.length} percorsi ottimizzati con successo!`);
         }
 
@@ -1012,7 +1410,7 @@
             appData.schedule = schedule;
             renderSection('schedule');
             updateStats();
-            saveData(); // Salva automaticamente
+            saveData();
             alert(`✅ Pianificazione trimestrale generata: ${schedule.length} giorni lavorativi!`);
         }
 
@@ -1058,7 +1456,7 @@
             closeModal('message-modal');
             renderSection('messages');
             updateStats();
-            saveData(); // Salva automaticamente
+            saveData();
             alert('✅ Messaggio inviato a tutti i sostituti disponibili!');
         }
 
@@ -1094,28 +1492,44 @@
                             <th>Nome</th>
                             <th>Indirizzo</th>
                             <th>Telefono</th>
-                            <th>Necessità</th>
+                            <th>Dettagli Trasporto</th>
                             <th>Azioni</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${appData.users.map(user => `
+                        ${appData.users.map(user => {
+                            const daysStr = user.transportDays.map(d => dayNames[d]).join(', ');
+                            const shiftsStr = user.shifts === 'entrambi' ? 'Entrambi' : 
+                                             user.shifts === 'mattina' ? 'Mattina' : 'Pomeriggio';
+                            const priorityStr = user.priority === 'primo' ? 'Primo' : 
+                                               user.priority === 'ultimo' ? 'Ultimo' : 'Normale';
+                            
+                            return `
                             <tr>
                                 <td><strong>${user.name}</strong></td>
                                 <td>${user.address}</td>
                                 <td>${user.phone || 'N/A'}</td>
-                                <td>
-                                    <span class="badge ${user.needsWheelchair ? 'badge-warning' : 'badge-success'}">
-                                        ${user.needsWheelchair ? '♿ Carrozzina' : '👤 Standard'}
-                                    </span>
+                                <td class="user-info">
+                                    <div class="details">
+                                        <span class="badge ${user.needsWheelchair ? 'badge-warning' : 'badge-success'}">
+                                            ${user.needsWheelchair ? '♿ Carrozzina' : '👤 Standard'}
+                                        </span>
+                                        <span class="badge badge-info">📅 ${daysStr}</span>
+                                        <span class="badge badge-info">🕐 ${shiftsStr}</span>
+                                        <span class="badge ${user.priority === 'primo' ? 'badge-success' : 
+                                                              user.priority === 'ultimo' ? 'badge-danger' : 'badge-secondary'}">
+                                            ${user.priority === 'primo' ? '⬆️' : user.priority === 'ultimo' ? '⬇️' : '➡️'} ${priorityStr}
+                                        </span>
+                                    </div>
                                 </td>
                                 <td>
-                                    <button class="btn btn-danger" onclick="deleteItem('users', ${user.id})" style="padding: 6px 12px; font-size: 12px;">
-                                        🗑️ Elimina
-                                    </button>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-warning" onclick="editUser(${user.id})" title="Modifica utente">✏️</button>
+                                        <button class="btn btn-danger" onclick="deleteItem('users', ${user.id})" title="Elimina utente">🗑️</button>
+                                    </div>
                                 </td>
                             </tr>
-                        `).join('')}
+                        `}).join('')}
                     </tbody>
                 </table>
             `;
@@ -1185,7 +1599,8 @@
                     
                     <div style="font-size: 14px; line-height: 1.5;">
                         <p style="margin: 4px 0;">🚐 ${vehicle.isLongBase ? 'Passo Lungo' : 'Passo Standard'}</p>
-                        <p style="margin: 4px 0;">♿ Pedana: ${vehicle.hasLift ? 'SÌ' : 'NO'}</p>
+                        <p style="margin: 4px 0;">♿ Pedana elevatrice: ${vehicle.hasLift ? 'SÌ' : 'NO'}</p>
+                        <p style="margin: 4px 0;">🔄 Pedane laterali: ${vehicle.hasSideRamps ? 'SÌ' : 'NO'}</p>
                         <p style="margin: 4px 0;">🪑 Posti carrozzina: ${vehicle.wheelchairSpots}</p>
                         <p style="margin: 4px 0;">👥 Posti totali: ${vehicle.totalSeats} (escluso autista)</p>
                     </div>
@@ -1260,6 +1675,8 @@
                                 <div class="flex" style="gap: 8px; align-items: center;">
                                     <span style="font-size: 12px; color: #6b7280;">${user.phone || 'N/A'}</span>
                                     ${user.needsWheelchair ? '<span class="badge badge-warning">♿ Carrozzina</span>' : ''}
+                                    ${user.priority === 'primo' ? '<span class="badge badge-success">⬆️ Primo</span>' : 
+                                      user.priority === 'ultimo' ? '<span class="badge badge-danger">⬇️ Ultimo</span>' : ''}
                                 </div>
                             </div>
                         `).join('')}
