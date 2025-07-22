@@ -36,6 +36,7 @@
         .btn-primary { background: #3b82f6; color: white; }
         .btn-success { background: #10b981; color: white; }
         .btn-danger { background: #ef4444; color: white; }
+        .btn-warning { background: #f59e0b; color: white; }
         .btn-secondary { background: #6b7280; color: white; }
         .btn:hover { opacity: 0.9; }
         
@@ -91,6 +92,10 @@
         .schedule-container { max-height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 6px; }
         .schedule-table th { position: sticky; top: 0; background: #f9fafb; }
         
+        /* Action buttons for items */
+        .action-buttons { display: flex; gap: 4px; flex-wrap: wrap; }
+        .action-buttons .btn { padding: 6px 10px; font-size: 11px; margin: 1px; }
+        
         /* Responsive */
         @media (max-width: 768px) {
             .container { padding: 8px; }
@@ -102,6 +107,8 @@
             .modal-content { width: 95%; padding: 16px; }
             .flex[style*="gap"] { flex-direction: column; align-items: stretch; }
             .flex[style*="gap"] .btn { margin: 2px 0; }
+            .action-buttons { flex-direction: column; }
+            .action-buttons .btn { width: 100%; }
         }
     </style>
 </head>
@@ -193,7 +200,7 @@
             <div class="card">
                 <div class="flex justify-between mb-20">
                     <h2>🚗 Gestione Operatori</h2>
-                    <button class="btn btn-primary" onclick="openModal('operator-modal')">➕ Aggiungi Operatore</button>
+                    <button class="btn btn-primary" onclick="openAddOperatorModal()">➕ Aggiungi Operatore</button>
                 </div>
                 <div id="operators-grid" class="grid grid-3"></div>
             </div>
@@ -204,7 +211,7 @@
             <div class="card">
                 <div class="flex justify-between mb-20">
                     <h2>🚐 Gestione Veicoli</h2>
-                    <button class="btn btn-primary" onclick="openModal('vehicle-modal')">➕ Aggiungi Veicolo</button>
+                    <button class="btn btn-primary" onclick="openAddVehicleModal()">➕ Aggiungi Veicolo</button>
                 </div>
                 <div id="vehicles-grid" class="grid grid-2"></div>
             </div>
@@ -279,7 +286,7 @@
     <!-- Operator Modal -->
     <div id="operator-modal" class="modal">
         <div class="modal-content">
-            <h3 style="margin-bottom: 20px;">Aggiungi Nuovo Operatore</h3>
+            <h3 id="operator-modal-title" style="margin-bottom: 20px;">Aggiungi Nuovo Operatore</h3>
             <div class="form-group">
                 <label class="form-label">Nome Completo</label>
                 <input id="operator-name" class="form-input" type="text" placeholder="Nome e cognome">
@@ -303,7 +310,7 @@
                 </label>
             </div>
             <div class="flex" style="gap: 12px;">
-                <button class="btn btn-primary" onclick="addOperator()" style="flex: 1;">Aggiungi</button>
+                <button id="operator-save-btn" class="btn btn-primary" onclick="saveOperator()" style="flex: 1;">Aggiungi</button>
                 <button class="btn btn-secondary" onclick="closeModal('operator-modal')" style="flex: 1;">Annulla</button>
             </div>
         </div>
@@ -312,7 +319,7 @@
     <!-- Vehicle Modal -->
     <div id="vehicle-modal" class="modal">
         <div class="modal-content">
-            <h3 style="margin-bottom: 20px;">Aggiungi Nuovo Veicolo</h3>
+            <h3 id="vehicle-modal-title" style="margin-bottom: 20px;">Aggiungi Nuovo Veicolo</h3>
             <div class="form-group">
                 <label class="form-label">Nome Veicolo</label>
                 <input id="vehicle-name" class="form-input" type="text" placeholder="es: Pulmino D">
@@ -344,7 +351,7 @@
                 </label>
             </div>
             <div class="flex" style="gap: 12px;">
-                <button class="btn btn-primary" onclick="addVehicle()" style="flex: 1;">Aggiungi</button>
+                <button id="vehicle-save-btn" class="btn btn-primary" onclick="saveVehicle()" style="flex: 1;">Aggiungi</button>
                 <button class="btn btn-secondary" onclick="closeModal('vehicle-modal')" style="flex: 1;">Annulla</button>
             </div>
         </div>
@@ -397,7 +404,9 @@
             routes: [],
             schedule: [],
             messages: [],
-            selectedOperator: null
+            selectedOperator: null,
+            editingOperator: null,
+            editingVehicle: null
         };
 
         // Local Storage Functions
@@ -419,13 +428,13 @@
                 // Aggiorna l'indicatore di stato
                 const indicator = document.getElementById('last-saved-indicator');
                 if (indicator) {
-                    indicator.textContent = `📅 Salvato: ${now.toLocaleTimeString('it-IT')}`;
-                    indicator.style.color = '#059669'; // Verde per successo
+                    indicator.innerHTML = `💾 Salvato: ${now.toLocaleTimeString('it-IT')} <span style="color: #10b981;">✓</span>`;
                 }
                 
-                // Debug dettagliato
-                console.log('✅ SALVATAGGIO COMPLETATO:', {
-                    timestamp: now.toLocaleString('it-IT'),
+                // Mostra notifica temporanea
+                showSaveNotification('✅ Dati salvati automaticamente');
+                
+                console.log('✅ Dati salvati automaticamente:', {
                     users: appData.users.length,
                     operators: appData.operators.length,
                     vehicles: appData.vehicles.length,
@@ -436,18 +445,54 @@
                 
                 return true;
             } catch (error) {
-                console.error('❌ ERRORE SALVATAGGIO:', error);
+                console.error('❌ Errore salvataggio:', error);
+                showSaveNotification('❌ Errore nel salvare i dati', 'error');
                 
-                // Aggiorna indicatore con errore
-                const indicator = document.getElementById('last-saved-indicator');
-                if (indicator) {
-                    indicator.textContent = `❌ Errore salvataggio: ${new Date().toLocaleTimeString('it-IT')}`;
-                    indicator.style.color = '#dc2626'; // Rosso per errore
+                // Prova a liberare spazio se localStorage è pieno
+                if (error.name === 'QuotaExceededError') {
+                    if (confirm('💾 Spazio di archiviazione pieno!\n\nVuoi esportare un backup e resettare i dati?')) {
+                        exportBackup();
+                    }
                 }
-                
-                alert('⚠️ ERRORE NEL SALVARE I DATI!\n\nIl browser potrebbe avere la memoria piena. Prova:\n1. Esporta un backup\n2. Pulisci la cache del browser\n3. Ricarica la pagina');
                 return false;
             }
+        }
+
+        function showSaveNotification(message, type = 'success') {
+            // Rimuovi notifiche esistenti
+            const existing = document.getElementById('save-notification');
+            if (existing) existing.remove();
+            
+            // Crea nuova notifica
+            const notification = document.createElement('div');
+            notification.id = 'save-notification';
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 16px;
+                border-radius: 6px;
+                font-size: 14px;
+                font-weight: 500;
+                z-index: 10000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                transition: all 0.3s ease;
+                ${type === 'error' ? 
+                    'background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;' : 
+                    'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;'
+                }
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // Rimuovi dopo 3 secondi
+            setTimeout(() => {
+                if (notification) {
+                    notification.style.opacity = '0';
+                    setTimeout(() => notification.remove(), 300);
+                }
+            }, 3000);
         }
 
         function loadData() {
@@ -489,231 +534,6 @@
             return false;
         }
 
-        function exportBackup() {
-            const backupData = {
-                users: appData.users,
-                operators: appData.operators,
-                vehicles: appData.vehicles,
-                routes: appData.routes,
-                schedule: appData.schedule,
-                messages: appData.messages,
-                exportDate: new Date().toISOString(),
-                appVersion: '1.0'
-            };
-            
-            const blob = new Blob([JSON.stringify(backupData, null, 2)], {type: 'application/json'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `backup_centro_diurno_${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            
-            alert('✅ Backup esportato con successo!');
-        }
-
-        function importBackup() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json';
-            input.onchange = function(event) {
-                const file = event.target.files[0];
-                if (!file) return;
-                
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const backupData = JSON.parse(e.target.result);
-                        
-                        // Verifica che sia un backup valido
-                        if (!backupData.users || !backupData.operators || !backupData.vehicles) {
-                            alert('❌ File di backup non valido');
-                            return;
-                        }
-                        
-                        // Chiedi conferma
-                        const exportDate = backupData.exportDate ? 
-                            new Date(backupData.exportDate).toLocaleString('it-IT') : 'Sconosciuta';
-                        
-                        if (confirm(`Vuoi ripristinare il backup del ${exportDate}?\n\n` +
-                                   `Questo sostituirà tutti i dati attuali:\n` +
-                                   `• ${backupData.users.length} utenti\n` +
-                                   `• ${backupData.operators.length} operatori\n` +
-                                   `• ${backupData.vehicles.length} veicoli`)) {
-                            
-                            appData.users = backupData.users || [];
-                            appData.operators = backupData.operators || [];
-                            appData.vehicles = backupData.vehicles || [];
-                            appData.routes = backupData.routes || [];
-                            appData.schedule = backupData.schedule || [];
-                            appData.messages = backupData.messages || [];
-                            
-                            saveData(); // Salva immediatamente
-                            updateStats();
-                            
-                            // Aggiorna la vista corrente
-                            const currentSection = document.querySelector('.section:not(.hidden)').id;
-                            renderSection(currentSection);
-                            
-                            alert('✅ Backup ripristinato con successo!');
-                        }
-                        
-                    } catch (error) {
-                        console.error('Errore import backup:', error);
-                        alert('❌ Errore nel leggere il file di backup');
-                    }
-                };
-                reader.readAsText(file);
-            };
-            input.click();
-        }
-
-        function testAllSaveFunctions() {
-            console.log('🧪 INIZIANDO TEST COMPLETO DEI SALVATAGGI...');
-            
-            // Salva stato originale
-            const originalData = JSON.parse(JSON.stringify(appData));
-            
-            let testsResults = {
-                addUser: false,
-                addOperator: false,
-                addVehicle: false,
-                deleteUser: false,
-                deleteOperator: false,
-                deleteVehicle: false,
-                excelImport: false,
-                routes: false,
-                schedule: false,
-                messages: false
-            };
-            
-            try {
-                // Test 1: Aggiungi Utente
-                console.log('🔍 Test 1: Aggiungi Utente');
-                const testUserId = Math.max(...appData.users.map(u => u.id), 0) + 1;
-                appData.users.push({id: testUserId, name: 'TEST USER', address: 'TEST ADDRESS', phone: '000-000-0000', needsWheelchair: false});
-                const saveResult1 = saveData();
-                testsResults.addUser = saveResult1;
-                console.log(saveResult1 ? '✅ Test Utente OK' : '❌ Test Utente FALLITO');
-                
-                // Test 2: Aggiungi Operatore  
-                console.log('🔍 Test 2: Aggiungi Operatore');
-                const testOpId = Math.max(...appData.operators.map(o => o.id), 0) + 1;
-                appData.operators.push({id: testOpId, name: 'TEST OPERATOR', phone: '000-000-0000', shift: 'mattina', canDriveLong: false});
-                const saveResult2 = saveData();
-                testsResults.addOperator = saveResult2;
-                console.log(saveResult2 ? '✅ Test Operatore OK' : '❌ Test Operatore FALLITO');
-                
-                // Test 3: Aggiungi Veicolo
-                console.log('🔍 Test 3: Aggiungi Veicolo');
-                const testVehicleId = Math.max(...appData.vehicles.map(v => v.id), 0) + 1;
-                appData.vehicles.push({id: testVehicleId, name: 'TEST VEHICLE', plate: 'TEST123', hasLift: false, wheelchairSpots: 0, totalSeats: 6, isLongBase: false});
-                const saveResult3 = saveData();
-                testsResults.addVehicle = saveResult3;
-                console.log(saveResult3 ? '✅ Test Veicolo OK' : '❌ Test Veicolo FALLITO');
-                
-                // Test 4: Test Eliminazioni
-                console.log('🔍 Test 4-6: Test Eliminazioni');
-                appData.users = appData.users.filter(u => u.id !== testUserId);
-                testsResults.deleteUser = saveData();
-                
-                appData.operators = appData.operators.filter(o => o.id !== testOpId);  
-                testsResults.deleteOperator = saveData();
-                
-                appData.vehicles = appData.vehicles.filter(v => v.id !== testVehicleId);
-                testsResults.deleteVehicle = saveData();
-                
-                // Test 7: Test Percorsi
-                console.log('🔍 Test 7: Test Percorsi');
-                appData.routes = [{id: 1, test: 'route'}];
-                testsResults.routes = saveData();
-                
-                // Test 8: Test Pianificazione
-                console.log('🔍 Test 8: Test Pianificazione');
-                appData.schedule = [{id: 1, test: 'schedule'}];
-                testsResults.schedule = saveData();
-                
-                // Test 9: Test Messaggi
-                console.log('🔍 Test 9: Test Messaggi');
-                appData.messages = [{id: 1, test: 'message'}];
-                testsResults.messages = saveData();
-                
-                // Ripristina dati originali
-                console.log('🔄 Ripristino dati originali...');
-                appData.users = originalData.users;
-                appData.operators = originalData.operators;
-                appData.vehicles = originalData.vehicles;
-                appData.routes = originalData.routes;
-                appData.schedule = originalData.schedule;
-                appData.messages = originalData.messages;
-                saveData();
-                
-                // Risultati finali
-                console.log('📊 RISULTATI TEST SALVATAGGI:');
-                Object.entries(testsResults).forEach(([test, result]) => {
-                    console.log(result ? `✅ ${test}: OK` : `❌ ${test}: FALLITO`);
-                });
-                
-                const allPassed = Object.values(testsResults).every(r => r);
-                const passedCount = Object.values(testsResults).filter(r => r).length;
-                const totalTests = Object.values(testsResults).length;
-                
-                if (allPassed) {
-                    alert(`🎉 TUTTI I TEST SUPERATI!\n\n✅ ${passedCount}/${totalTests} funzioni di salvataggio OK\n\n💾 Il sistema di salvataggio è completamente funzionante!`);
-                } else {
-                    alert(`⚠️ ALCUNI TEST FALLITI!\n\n✅ Superati: ${passedCount}/${totalTests}\n❌ Falliti: ${totalTests - passedCount}/${totalTests}\n\nControlla la console per dettagli.`);
-                }
-                
-            } catch (error) {
-                console.error('❌ ERRORE NEI TEST:', error);
-                alert('❌ Errore durante i test di salvataggio. Controlla la console.');
-                
-                // Ripristina comunque i dati originali
-                appData.users = originalData.users;
-                appData.operators = originalData.operators;
-                appData.vehicles = originalData.vehicles;
-                appData.routes = originalData.routes;
-                appData.schedule = originalData.schedule;
-                appData.messages = originalData.messages;
-                saveData();
-            }
-        }
-
-        function checkStorageSpace() {
-            try {
-                // Test dello spazio disponibile
-                const testKey = 'storageTest';
-                const testData = 'x'.repeat(1024); // 1KB di test
-                
-                let maxSize = 0;
-                try {
-                    for (let i = 0; i < 10000; i++) {
-                        localStorage.setItem(testKey, testData.repeat(i));
-                        maxSize = i * 1024;
-                    }
-                } catch (e) {
-                    localStorage.removeItem(testKey);
-                }
-                
-                // Calcola spazio usato dall'app
-                const currentData = localStorage.getItem('centroDiurnoData');
-                const usedSpace = currentData ? currentData.length : 0;
-                
-                console.log('💾 SPAZIO ARCHIVIAZIONE:', {
-                    spazioDisponibile: `~${Math.round(maxSize / 1024)}KB`,
-                    spazioUsatoDallaApp: `${Math.round(usedSpace / 1024)}KB`,
-                    percentualeUsata: `${Math.round((usedSpace / maxSize) * 100)}%`
-                });
-                
-                if (usedSpace / maxSize > 0.8) {
-                    alert('⚠️ ATTENZIONE: Spazio di archiviazione quasi pieno!\n\nEsporta un backup e considera di fare pulizia dei dati vecchi.');
-                }
-                
-            } catch (error) {
-                console.error('❌ Errore controllo spazio:', error);
-            }
-        }
-
         // Navigation
         function showSection(sectionName) {
             // Hide all sections
@@ -744,6 +564,13 @@
         function closeModal(modalId) {
             document.getElementById(modalId).classList.remove('show');
             clearForm(modalId);
+            
+            // Reset editing state
+            if (modalId === 'operator-modal') {
+                appData.editingOperator = null;
+            } else if (modalId === 'vehicle-modal') {
+                appData.editingVehicle = null;
+            }
         }
 
         function clearForm(modalId) {
@@ -757,6 +584,140 @@
                     input.value = '';
                 }
             });
+        }
+
+        // Operator functions
+        function openAddOperatorModal() {
+            appData.editingOperator = null;
+            document.getElementById('operator-modal-title').textContent = 'Aggiungi Nuovo Operatore';
+            document.getElementById('operator-save-btn').textContent = 'Aggiungi';
+            clearForm('operator-modal');
+            openModal('operator-modal');
+        }
+
+        function editOperator(id) {
+            const operator = appData.operators.find(op => op.id === id);
+            if (!operator) return;
+            
+            appData.editingOperator = operator;
+            
+            // Popola il form
+            document.getElementById('operator-name').value = operator.name;
+            document.getElementById('operator-phone').value = operator.phone || '';
+            document.getElementById('operator-shift').value = operator.shift;
+            document.getElementById('operator-longbase').checked = operator.canDriveLong;
+            
+            // Cambia titolo e pulsante
+            document.getElementById('operator-modal-title').textContent = `Modifica Operatore: ${operator.name}`;
+            document.getElementById('operator-save-btn').textContent = 'Salva Modifiche';
+            
+            openModal('operator-modal');
+        }
+
+        function saveOperator() {
+            const name = document.getElementById('operator-name').value.trim();
+            const phone = document.getElementById('operator-phone').value.trim();
+            const shift = document.getElementById('operator-shift').value;
+            const canDriveLong = document.getElementById('operator-longbase').checked;
+            
+            if (!name) {
+                alert('❌ Inserisci almeno il nome');
+                return;
+            }
+            
+            if (appData.editingOperator) {
+                // Modifica operatore esistente
+                appData.editingOperator.name = name;
+                appData.editingOperator.phone = phone;
+                appData.editingOperator.shift = shift;
+                appData.editingOperator.canDriveLong = canDriveLong;
+                
+                closeModal('operator-modal');
+                renderSection('operators');
+                updateStats();
+                saveData();
+                alert('✅ Operatore modificato con successo!');
+            } else {
+                // Aggiungi nuovo operatore
+                const id = Math.max(...appData.operators.map(o => o.id), 0) + 1;
+                appData.operators.push({id, name, phone, shift, canDriveLong});
+                
+                closeModal('operator-modal');
+                renderSection('operators');
+                updateStats();
+                saveData();
+                alert('✅ Operatore aggiunto con successo!');
+            }
+        }
+
+        // Vehicle functions
+        function openAddVehicleModal() {
+            appData.editingVehicle = null;
+            document.getElementById('vehicle-modal-title').textContent = 'Aggiungi Nuovo Veicolo';
+            document.getElementById('vehicle-save-btn').textContent = 'Aggiungi';
+            clearForm('vehicle-modal');
+            openModal('vehicle-modal');
+        }
+
+        function editVehicle(id) {
+            const vehicle = appData.vehicles.find(v => v.id === id);
+            if (!vehicle) return;
+            
+            appData.editingVehicle = vehicle;
+            
+            // Popola il form
+            document.getElementById('vehicle-name').value = vehicle.name;
+            document.getElementById('vehicle-plate').value = vehicle.plate;
+            document.getElementById('vehicle-lift').checked = vehicle.hasLift;
+            document.getElementById('vehicle-wheelchair').value = vehicle.wheelchairSpots;
+            document.getElementById('vehicle-seats').value = vehicle.totalSeats;
+            document.getElementById('vehicle-longbase').checked = vehicle.isLongBase;
+            
+            // Cambia titolo e pulsante
+            document.getElementById('vehicle-modal-title').textContent = `Modifica Veicolo: ${vehicle.name}`;
+            document.getElementById('vehicle-save-btn').textContent = 'Salva Modifiche';
+            
+            openModal('vehicle-modal');
+        }
+
+        function saveVehicle() {
+            const name = document.getElementById('vehicle-name').value.trim();
+            const plate = document.getElementById('vehicle-plate').value.trim();
+            const hasLift = document.getElementById('vehicle-lift').checked;
+            const wheelchairSpots = parseInt(document.getElementById('vehicle-wheelchair').value) || 0;
+            const totalSeats = parseInt(document.getElementById('vehicle-seats').value) || 6;
+            const isLongBase = document.getElementById('vehicle-longbase').checked;
+            
+            if (!name || !plate) {
+                alert('❌ Compila almeno Nome e Targa');
+                return;
+            }
+            
+            if (appData.editingVehicle) {
+                // Modifica veicolo esistente
+                appData.editingVehicle.name = name;
+                appData.editingVehicle.plate = plate;
+                appData.editingVehicle.hasLift = hasLift;
+                appData.editingVehicle.wheelchairSpots = wheelchairSpots;
+                appData.editingVehicle.totalSeats = totalSeats;
+                appData.editingVehicle.isLongBase = isLongBase;
+                
+                closeModal('vehicle-modal');
+                renderSection('vehicles');
+                updateStats();
+                saveData();
+                alert('✅ Veicolo modificato con successo!');
+            } else {
+                // Aggiungi nuovo veicolo
+                const id = Math.max(...appData.vehicles.map(v => v.id), 0) + 1;
+                appData.vehicles.push({id, name, plate, hasLift, wheelchairSpots, totalSeats, isLongBase});
+                
+                closeModal('vehicle-modal');
+                renderSection('vehicles');
+                updateStats();
+                saveData();
+                alert('✅ Veicolo aggiunto con successo!');
+            }
         }
 
         function loadExcelFile(event) {
@@ -897,7 +858,7 @@
             alert(`✅ Esportati ${appData.users.length} utenti in Excel!`);
         }
 
-        // Add functions
+        // Add functions (mantengo per retrocompatibilità)
         function addUser() {
             const name = document.getElementById('user-name').value.trim();
             const address = document.getElementById('user-address').value.trim();
@@ -914,46 +875,6 @@
                 alert('✅ Utente aggiunto con successo!');
             } else {
                 alert('❌ Compila almeno Nome e Indirizzo');
-            }
-        }
-
-        function addOperator() {
-            const name = document.getElementById('operator-name').value.trim();
-            const phone = document.getElementById('operator-phone').value.trim();
-            const shift = document.getElementById('operator-shift').value;
-            const canDriveLong = document.getElementById('operator-longbase').checked;
-            
-            if (name) {
-                const id = Math.max(...appData.operators.map(o => o.id), 0) + 1;
-                appData.operators.push({id, name, phone, shift, canDriveLong});
-                closeModal('operator-modal');
-                renderSection('operators');
-                updateStats();
-                saveData(); // Salva automaticamente
-                alert('✅ Operatore aggiunto con successo!');
-            } else {
-                alert('❌ Inserisci almeno il nome');
-            }
-        }
-
-        function addVehicle() {
-            const name = document.getElementById('vehicle-name').value.trim();
-            const plate = document.getElementById('vehicle-plate').value.trim();
-            const hasLift = document.getElementById('vehicle-lift').checked;
-            const wheelchairSpots = parseInt(document.getElementById('vehicle-wheelchair').value) || 0;
-            const totalSeats = parseInt(document.getElementById('vehicle-seats').value) || 6;
-            const isLongBase = document.getElementById('vehicle-longbase').checked;
-            
-            if (name && plate) {
-                const id = Math.max(...appData.vehicles.map(v => v.id), 0) + 1;
-                appData.vehicles.push({id, name, plate, hasLift, wheelchairSpots, totalSeats, isLongBase});
-                closeModal('vehicle-modal');
-                renderSection('vehicles');
-                updateStats();
-                saveData(); // Salva automaticamente
-                alert('✅ Veicolo aggiunto con successo!');
-            } else {
-                alert('❌ Compila almeno Nome e Targa');
             }
         }
 
@@ -1209,9 +1130,14 @@
                             <h3 style="margin: 0; color: #1f2937;">${operator.name}</h3>
                             <p style="margin: 4px 0; color: #6b7280; font-size: 14px;">📞 ${operator.phone || 'N/A'}</p>
                         </div>
-                        <button class="btn btn-danger" onclick="deleteItem('operators', ${operator.id})" style="padding: 6px 12px; font-size: 12px;">
-                            🗑️
-                        </button>
+                        <div class="action-buttons">
+                            <button class="btn btn-warning" onclick="editOperator(${operator.id})" title="Modifica operatore">
+                                ✏️
+                            </button>
+                            <button class="btn btn-danger" onclick="deleteItem('operators', ${operator.id})" title="Elimina operatore">
+                                🗑️
+                            </button>
+                        </div>
                     </div>
                     
                     <div style="margin-bottom: 16px;">
@@ -1246,9 +1172,14 @@
                         </div>
                         <div class="flex" style="gap: 8px; align-items: flex-start;">
                             <span class="badge badge-success" style="font-size: 10px;">Disponibile</span>
-                            <button class="btn btn-danger" onclick="deleteItem('vehicles', ${vehicle.id})" style="padding: 6px 12px; font-size: 12px;">
-                                🗑️
-                            </button>
+                            <div class="action-buttons">
+                                <button class="btn btn-warning" onclick="editVehicle(${vehicle.id})" title="Modifica veicolo">
+                                    ✏️
+                                </button>
+                                <button class="btn btn-danger" onclick="deleteItem('vehicles', ${vehicle.id})" title="Elimina veicolo">
+                                    🗑️
+                                </button>
+                            </div>
                         </div>
                     </div>
                     
