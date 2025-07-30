@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -11,7 +12,17 @@
     <div id="users-table" style="margin-top: 30px;"></div>
 
     <script>
-        const appData = { users: [] };
+        
+function log() {
+    const div = document.getElementById('log');
+    for (const a of arguments) {
+        div.innerHTML += JSON.stringify(a) + ' ';
+    }
+    div.innerHTML += '<br>';
+    console.log(...arguments);
+}
+
+const appData = { users: [] };
 
         
 // Aggiunta supporto colonne: Pedane Laterali, Giorni, Turni, Priorità, Ordine Mattina/Pomeriggio
@@ -141,5 +152,7 @@ function renderUsers() {
 
         document.addEventListener("DOMContentLoaded", () => renderSection());
     </script>
+
+<div id="log" style="margin-top:30px;font-family:monospace;color:#444"></div>
 </body>
 </html>
